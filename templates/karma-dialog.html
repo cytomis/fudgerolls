@@ -1,10 +1,83 @@
 <div class="die-hard karma-dialog">
   <nav class="tabs" data-group="primary-tabs">
+    <a class="item" data-tab="statistics">Statistics</a>
     <a class="item" data-tab="config">Configuration</a>
     <a class="item" data-tab="history">Roll History</a>
   </nav>
 
   <section class="content">
+    <!-- Statistics Tab -->
+    <div class="tab" data-group="primary-tabs" data-tab="statistics">
+      <div class="statistics-header">
+        <h3>Player Roll Statistics</h3>
+        <p class="description">
+          Current averages based on configured history sizes. 
+          Simple Karma: {{config.simple.historySize}} rolls | 
+          Average Karma: {{config.average.historySize}} rolls
+        </p>
+      </div>
+
+      <div class="statistics-list">
+        {{#if statistics.length}}
+          {{#each statistics}}
+          <div class="stat-card {{#if simpleTriggered}}simple-triggered{{/if}} {{#if averageTriggered}}average-triggered{{/if}}">
+            <div class="stat-header">
+              <div class="stat-user">
+                <strong>{{userName}}</strong>
+                {{#if isGM}}<span class="gm-badge">GM</span>{{/if}}
+                {{#unless karmaEnabled}}<span class="karma-disabled-badge">Karma Off</span>{{/unless}}
+                {{#unless active}}<span class="offline-badge">Offline</span>{{/unless}}
+              </div>
+              <div class="stat-count">{{totalRolls}} total rolls</div>
+            </div>
+            
+            <div class="stat-grid">
+              <div class="stat-item">
+                <div class="stat-label">Overall Average</div>
+                <div class="stat-value">{{overallAverage}}</div>
+              </div>
+              
+              <div class="stat-item">
+                <div class="stat-label">Simple Karma ({{../config.simple.historySize}})</div>
+                <div class="stat-value {{#if simpleTriggered}}triggered{{/if}}">
+                  {{simpleAverage}}
+                  {{#if simpleTriggered}}<i class="fas fa-exclamation-triangle" title="Would trigger!"></i>{{/if}}
+                </div>
+              </div>
+              
+              <div class="stat-item">
+                <div class="stat-label">Avg Karma ({{../config.average.historySize}})</div>
+                <div class="stat-value {{#if averageTriggered}}triggered{{/if}}">
+                  {{averageKarmaAverage}}
+                  {{#if averageTriggered}}<i class="fas fa-exclamation-triangle" title="Would trigger!"></i>{{/if}}
+                </div>
+              </div>
+              
+              <div class="stat-item">
+                <div class="stat-label">Min / Max</div>
+                <div class="stat-value">{{min}} / {{max}}</div>
+              </div>
+            </div>
+            
+            <div class="stat-rolls">
+              <div class="stat-label">Recent Rolls:</div>
+              <div class="roll-chips">
+                {{#each recentRolls}}
+                <span class="roll-chip">{{this}}</span>
+                {{/each}}
+              </div>
+            </div>
+          </div>
+          {{/each}}
+        {{else}}
+          <div class="no-statistics">
+            <p><i class="fas fa-info-circle"></i> No roll history available yet.</p>
+            <p>Statistics will appear once players start rolling dice.</p>
+          </div>
+        {{/if}}
+      </div>
+    </div>
+
     <!-- Configuration Tab -->
     <div class="tab" data-group="primary-tabs" data-tab="config">
       <form id="karma-config-form">
