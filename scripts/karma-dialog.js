@@ -20,7 +20,7 @@ export class KarmaDialog extends Application {
       width: 700,
       height: 700,
       resizable: true,
-      tabs: [{ navSelector: '.tabs', contentSelector: '.content', initial: 'config' }]
+      tabs: [{ navSelector: '.tabs', contentSelector: '.content', initial: 'statistics' }]
     });
   }
   
@@ -63,6 +63,69 @@ export class KarmaDialog extends Application {
         count: rolls.length
       });
     }
+    
+    // Calculate statistics for all players based on configured history size
+    const simpleHistorySize = this.config.simple.historySize || 5;
+    const averageHistorySize = this.config.average.historySize || 10;
+    const maxHistorySize = Math.max(simpleHistorySize, averageHistorySize);
+    
+    data.statistics = game.users.map(u => {
+      const userRolls = history[u.id] || [];
+      const recentRolls = userRolls.slice(-maxHistorySize);
+      const simpleRolls = userRolls.slice(-simpleHistorySize);
+      const averageRolls = userRolls.slice(-averageHistorySize);
+      
+      // Calculate averages
+      const overallAverage = userRolls.length > 0
+        ? userRolls.reduce((sum, r) => sum + r.value, 0) / userRolls.length
+        : 0;
+      
+      const simpleAverage = simpleRolls.length > 0
+        ? simpleRolls.reduce((sum, r) => sum + r.value, 0) / simpleRolls.length
+        : 0;
+      
+      const averageKarmaAverage = averageRolls.length > 0
+        ? averageRolls.reduce((sum, r) => sum + r.value, 0) / averageRolls.length
+        : 0;
+      
+      // Find min and max in recent rolls
+      const min = recentRolls.length > 0
+        ? Math.min(...recentRolls.map(r => r.value))
+        : 0;
+      
+      const max = recentRolls.length > 0
+        ? Math.max(...recentRolls.map(r => r.value))
+        : 0;
+      
+      // Check if simple karma would trigger
+      const simpleTriggered = simpleRolls.length >= simpleHistorySize &&
+        simpleRolls.every(r => r.value < this.config.simple.threshold) &&
+        this.config.simple.enabled &&
+        game.diehard.config.isKarmaEnabledForUser(u.id);
+      
+      // Check if average karma would trigger
+      const averageTriggered = averageRolls.length >= averageHistorySize &&
+        averageKarmaAverage < this.config.average.threshold &&
+        this.config.average.enabled &&
+        game.diehard.config.isKarmaEnabledForUser(u.id);
+      
+      return {
+        userId: u.id,
+        userName: u.name,
+        isGM: u.isGM,
+        active: u.active,
+        karmaEnabled: game.diehard.config.isKarmaEnabledForUser(u.id),
+        totalRolls: userRolls.length,
+        overallAverage: overallAverage.toFixed(2),
+        simpleAverage: simpleAverage.toFixed(2),
+        averageKarmaAverage: averageKarmaAverage.toFixed(2),
+        min,
+        max,
+        simpleTriggered,
+        averageTriggered,
+        recentRolls: recentRolls.map(r => r.value)
+      };
+    }).filter(s => s.totalRolls > 0); // Only show users with roll history
     
     return data;
   }
@@ -183,5 +246,62 @@ export class KarmaDialog extends Application {
       ui.notifications.info('All roll history cleared');
       this.render(true);
     }
+  }
+  
+  /**
+   * Show quick statistics as a notification
+   */
+  static showQuickStats() {
+    const config = game.diehard.config.getKarmaConfig();
+    const history = game.diehard.config.getRollHistory();
+    const historySize = Math.max(config.simple.historySize || 5, config.average.historySize || 10);
+    
+    let content = '<div class="die-hard-stats"><h3>Current Roll Statistics</h3>';
+    content += `<p class="stats-info">Based on last ${historySize} rolls</p><table>`;
+    content += '<tr><th>Player</th><th>Avg</th><th>Min</th><th>Max</th><th>Count</th></tr>';
+    
+    const stats = [];
+    for (const user of game.users) {
+      const userRolls = history[user.id] || [];
+      if (userRolls.length === 0) continue;
+      
+      const recentRolls = userRolls.slice(-historySize);
+      const average = recentRolls.reduce((sum, r) => sum + r.value, 0) / recentRolls.length;
+      const min = Math.min(...recentRolls.map(r => r.value));
+      const max = Math.max(...recentRolls.map(r => r.value));
+      
+      stats.push({
+        name: user.name,
+        average,
+        min,
+        max,
+        count: userRolls.length
+      });
+    }
+    
+    // Sort by average (lowest first)
+    stats.sort((a, b) => a.average - b.average);
+    
+    if (stats.length === 0) {
+      content += '<tr><td colspan="5" style="text-align:center;">No roll history yet</td></tr>';
+    } else {
+      for (const stat of stats) {
+        content += `<tr>
+          <td><strong>${stat.name}</strong></td>
+          <td>${stat.average.toFixed(2)}</td>
+          <td>${stat.min}</td>
+          <td>${stat.max}</td>
+          <td>${stat.count}</td>
+        </tr>`;
+      }
+    }
+    
+    content += '</table></div>';
+    
+    ChatMessage.create({
+      content,
+      whisper: [game.user.id],
+      speaker: { alias: MODULE_TITLE }
+    });
   }
 }
