@@ -1,7 +1,7 @@
 {
   "id": "foundry-die-hard",
   "title": "Die Hard",
-  "description": "A module to influence and manipulate die rolls in Foundry VTT.",
+  "description": "A module to influence and manipulate die rolls in Foundry VTT. Allows GMs to fudge rolls and implement karma systems.",
   "version": "2.0.0",
   "compatibility": {
     "minimum": "13",
@@ -9,10 +9,32 @@
   },
   "authors": [
     {
-      "name": "Uranus Bytes"
+      "name": "Uranus Bytes",
+      "flags": {}
     }
   ],
   "esmodules": [
     "scripts/main.js"
-  ]
+  ],
+  "styles": [
+    "styles/die-hard.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "relationships": {
+    "systems": [],
+    "requires": []
+  },
+  "url": "https://github.com/cytomis/fudgerolls",
+  "manifest": "https://raw.githubusercontent.com/cytomis/fudgerolls/main/foundry-die-hardtest-main/foundry-die-hardtest-main/module.json",
+  "download": "https://github.com/cytomis/fudgerolls/archive/refs/heads/main.zip",
+  "license": "LICENSE",
+  "readme": "README.md",
+  "bugs": "https://github.com/cytomis/fudgerolls/issues",
+  "changelog": "CHANGELOG.md"
 }
