@@ -141,6 +141,14 @@ function registerSettings() {
     type: Object,
     default: {}
   });
+  
+  // Karma enabled users
+  game.settings.register(MODULE_ID, 'karmaEnabledUsers', {
+    scope: 'world',
+    config: false,
+    type: Object,
+    default: {}
+  });
 }
 
 /**
