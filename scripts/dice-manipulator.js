@@ -219,6 +219,12 @@ export class DiceManipulator {
     const userId = this.getUserIdFromSpeaker(speaker);
     if (!userId) return;
     
+    // Check if karma is enabled for this specific user
+    if (!game.diehard.config.isKarmaEnabledForUser(userId)) {
+      log(`Karma disabled for user ${userId}, skipping`);
+      return;
+    }
+    
     // Check if karma is enabled
     if (!config.simple.enabled && !config.average.enabled) return;
     
