@@ -54,11 +54,13 @@
     
     "Karma": {
       "Title": "Karma Configuration",
+      "StatisticsTab": "Statistics",
       "ConfigTab": "Configuration",
       "HistoryTab": "Roll History",
       "SaveButton": "Save Configuration",
       "ClearAll": "Clear All History",
       "NoHistory": "No roll history yet",
+      "NoStatistics": "No statistics available yet",
       "ConfigSaved": "Karma configuration saved",
       "HistoryCleared": "Roll history cleared",
       
