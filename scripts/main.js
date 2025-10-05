@@ -177,12 +177,17 @@ function addControlButtons() {
   // Create karma button
   const karmaBtn = document.createElement('a');
   karmaBtn.classList.add('die-hard-control', 'karma-control');
-  karmaBtn.title = 'Configure Karma';
+  karmaBtn.title = 'Configure Karma (Right-click for quick stats)';
   karmaBtn.innerHTML = '<i class="fas fa-praying-hands"></i>';
   
   karmaBtn.addEventListener('click', (event) => {
     event.preventDefault();
     new KarmaDialog().render(true);
+  });
+  
+  karmaBtn.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    KarmaDialog.showQuickStats();
   });
   
   // Insert buttons
