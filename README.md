@@ -227,8 +227,6 @@ This version has been completely rewritten for Foundry VTT v13:
 ## Credits
 
 - **Original Author**: Uranus Bytes
-- **Updated for v13**: Professional web developer with 15+ years experience
-- **Inspiration**: @apoapostolov
 
 ## License
 
