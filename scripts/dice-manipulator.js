@@ -13,16 +13,17 @@ export class DiceManipulator {
   /**
    * Process fudge for a roll
    */
-  processFudge(roll, speaker) {
+  processFudge(roll, userId) {
     const paused = game.settings.get(MODULE_ID, 'fudgesPaused');
     if (paused) return;
     
     const config = game.diehard.config;
     const fudges = config.getActiveFudges();
     
-    // Get the user ID from the speaker
-    const userId = this.getUserIdFromSpeaker(speaker);
-    if (!userId) return;
+    if (!userId) {
+      log('No userId provided for fudge processing');
+      return;
+    }
     
     // Find applicable fudges for this user
     const applicableFudges = Object.values(fudges).filter(f => 
@@ -214,10 +215,13 @@ export class DiceManipulator {
   /**
    * Process karma for a roll
    */
-  processKarma(roll, speaker) {
+  processKarma(roll, userId) {
     const config = game.diehard.config.getKarmaConfig();
-    const userId = this.getUserIdFromSpeaker(speaker);
-    if (!userId) return;
+    
+    if (!userId) {
+      log('No userId provided for karma processing');
+      return;
+    }
     
     // Check if karma is enabled for this specific user
     if (!game.diehard.config.isKarmaEnabledForUser(userId)) {
@@ -302,39 +306,51 @@ export class DiceManipulator {
   /**
    * Update roll history
    */
-  async updateRollHistory(rolls, speaker) {
-    const userId = this.getUserIdFromSpeaker(speaker);
-    if (!userId) return;
+  async updateRollHistory(rolls, userId) {
+    if (!userId) {
+      log('No userId provided for updating roll history');
+      return;
+    }
     
     for (const roll of rolls) {
       const rawTotal = this.getRawDiceTotal(roll);
       await game.diehard.config.addToRollHistory(userId, { total: rawTotal });
+      log(`Added roll to history for user ${userId}: ${rawTotal}`);
     }
   }
   
   /**
-   * Get user ID from speaker
+   * Get user ID from speaker (kept for backward compatibility, but not used anymore)
    */
   getUserIdFromSpeaker(speaker) {
     if (!speaker) return null;
     
-    // Try to get user from actor
+    // First, try to get the user from the actor
     if (speaker.actor) {
       const actor = game.actors.get(speaker.actor);
       if (actor) {
-        return actor.ownership ? Object.keys(actor.ownership)[0] : null;
+        // Find the user who owns this actor
+        for (const [userId, permission] of Object.entries(actor.ownership)) {
+          if (userId !== 'default' && permission === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
+            return userId;
+          }
+        }
       }
     }
     
     // Try to get user from token
     if (speaker.token) {
       const token = canvas.tokens?.get(speaker.token);
-      if (token && token.actor) {
-        return token.actor.ownership ? Object.keys(token.actor.ownership)[0] : null;
+      if (token?.actor) {
+        for (const [userId, permission] of Object.entries(token.actor.ownership)) {
+          if (userId !== 'default' && permission === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
+            return userId;
+          }
+        }
       }
     }
     
-    // Fallback to checking all users
+    // Fallback: check if any user has this actor as their character
     for (const user of game.users) {
       if (user.character?.id === speaker.actor) {
         return user.id;
