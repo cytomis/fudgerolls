@@ -31,10 +31,11 @@
     "requires": []
   },
   "url": "https://github.com/cytomis/fudgerolls",
-  "manifest": "https://raw.githubusercontent.com/cytomis/fudgerolls/main/foundry-die-hardtest-main/foundry-die-hardtest-main/module.json",
+  "manifest": "https://raw.githubusercontent.com/cytomis/fudgerolls/main/module.json",
   "download": "https://github.com/cytomis/fudgerolls/archive/refs/heads/main.zip",
   "license": "LICENSE",
   "readme": "README.md",
   "bugs": "https://github.com/cytomis/fudgerolls/issues",
   "changelog": "CHANGELOG.md"
 }
+
