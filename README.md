@@ -234,12 +234,6 @@ This version has been completely rewritten for Foundry VTT v13:
 
 This module is provided as-is without warranty. Use at your own risk.
 
-## Support
-
-- **Issues**: https://github.com/UranusBytes/foundry-die-hard/issues
-- **Discord**: Join the Foundry VTT community
-- **Documentation**: https://foundryvtt.com/api/v13/
-
 ## Changelog
 
 ### Version 2.0.0
