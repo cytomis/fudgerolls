@@ -8,6 +8,32 @@
     <!-- Configuration Tab -->
     <div class="tab" data-group="primary-tabs" data-tab="config">
       <form id="karma-config-form">
+        <!-- Karma Enabled Users -->
+        <div class="karma-section">
+          <h3>Karma Enabled Users</h3>
+          <p class="description">
+            Select which users should have karma applied to their rolls. Uncheck users (like the GM) to exclude them from karma.
+          </p>
+
+          <div class="karma-users-list">
+            {{#each users}}
+            <div class="user-karma-toggle">
+              <input 
+                type="checkbox" 
+                class="toggle-user-karma"
+                id="karma-user-{{id}}"
+                data-user-id="{{id}}"
+                {{#if karmaEnabled}}checked{{/if}}
+              />
+              <label for="karma-user-{{id}}">
+                {{name}}{{#if isGM}} (GM){{/if}}
+                {{#unless active}}<span class="offline-indicator">(Offline)</span>{{/unless}}
+              </label>
+            </div>
+            {{/each}}
+          </div>
+        </div>
+
         <!-- Simple Karma -->
         <div class="karma-section">
           <h3>Simple Karma</h3>
