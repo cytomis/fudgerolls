@@ -1,0 +1,100 @@
+{
+  "DIEHARD": {
+    "ModuleName": "Die Hard",
+    "ModuleDescription": "A module for manipulating dice rolls and implementing karma systems",
+    
+    "Settings": {
+      "EnableFudge": {
+        "Name": "Enable Fudge",
+        "Hint": "Allow GMs to manipulate dice rolls to meet specific criteria"
+      },
+      "EnableKarma": {
+        "Name": "Enable Karma",
+        "Hint": "Track roll history and adjust rolls for players with bad luck"
+      },
+      "DebugLogging": {
+        "Name": "Debug Logging",
+        "Hint": "Enable detailed console logging for debugging purposes"
+      }
+    },
+    
+    "Fudge": {
+      "Title": "Fudge Configuration",
+      "CreateTab": "Create Fudge",
+      "ActiveTab": "Active Fudges",
+      "TargetUser": "Target User",
+      "RollType": "Roll Type",
+      "Formula": "Formula",
+      "Persistent": "Persistent",
+      "CreateButton": "Create Fudge",
+      "DeleteButton": "Delete",
+      "ClearAll": "Clear All Fudges",
+      "NoFudges": "No active fudges",
+      "FudgeCreated": "Fudge created successfully",
+      "FudgeRemoved": "Fudge removed",
+      "InvalidFormula": "Invalid formula. Use format: OPERATOR VALUE (e.g., > 15)",
+      
+      "RollTypes": {
+        "Raw": "Raw Dice",
+        "Total": "Total (with modifiers)",
+        "System": "System Specific"
+      },
+      
+      "Whisper": {
+        "Title": "Fudge Applied",
+        "User": "User",
+        "Formula": "Formula",
+        "Original": "Original",
+        "Final": "Final",
+        "Attempts": "Attempts",
+        "AlreadyMet": "Roll already met criteria",
+        "CouldNotMeet": "Could not meet criteria after maximum attempts"
+      }
+    },
+    
+    "Karma": {
+      "Title": "Karma Configuration",
+      "ConfigTab": "Configuration",
+      "HistoryTab": "Roll History",
+      "SaveButton": "Save Configuration",
+      "ClearAll": "Clear All History",
+      "NoHistory": "No roll history yet",
+      "ConfigSaved": "Karma configuration saved",
+      "HistoryCleared": "Roll history cleared",
+      
+      "Simple": {
+        "Title": "Simple Karma",
+        "Description": "If all rolls in history are below threshold, ensure next roll meets minimum value",
+        "Enable": "Enable Simple Karma",
+        "HistorySize": "History Size",
+        "Threshold": "Threshold",
+        "MinValue": "Minimum Value"
+      },
+      
+      "Average": {
+        "Title": "Average Karma",
+        "Description": "If average of rolls is below threshold, increase next roll",
+        "Enable": "Enable Average Karma",
+        "HistorySize": "History Size",
+        "Threshold": "Threshold",
+        "Adjustment": "Adjustment",
+        "Cumulative": "Cumulative"
+      },
+      
+      "History": {
+        "UserName": "User",
+        "TotalRolls": "Total Rolls",
+        "Average": "Average",
+        "ClearUser": "Clear History",
+        "ConfirmClear": "Clear roll history for this user?",
+        "ConfirmClearAll": "Clear all roll history?"
+      }
+    },
+    
+    "Notifications": {
+      "FudgePaused": "Fudge paused",
+      "FudgeResumed": "Fudge resumed",
+      "NotGM": "Only GMs can access this feature"
+    }
+  }
+}

@@ -1,0 +1,132 @@
+<div class="die-hard fudge-dialog">
+  <nav class="tabs" data-group="primary-tabs">
+    <a class="item" data-tab="create">Create Fudge</a>
+    <a class="item" data-tab="active">Active Fudges</a>
+  </nav>
+
+  <section class="content">
+    <!-- Create Fudge Tab -->
+    <div class="tab" data-group="primary-tabs" data-tab="create">
+      <form id="fudge-create-form">
+        <div class="form-group">
+          <label for="user">Target User</label>
+          <select name="user" id="user">
+            {{#each users}}
+            <option value="{{id}}">{{name}}{{#if isGM}} (GM){{/if}}</option>
+            {{/each}}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="rollType">Roll Type</label>
+          <select name="rollType" id="rollType">
+            {{#each rollTypes}}
+            <option value="{{value}}">{{label}}</option>
+            {{/each}}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="formula">Formula</label>
+          <input 
+            type="text" 
+            name="formula" 
+            id="formula" 
+            placeholder="e.g., > 15 or < 5"
+            required
+          />
+          <small>Available operators: &lt;, &lt;=, &gt;, &gt;=, =, !=</small>
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox-group">
+            <input type="checkbox" name="persistent" id="persistent" />
+            <label for="persistent">Persistent (won't disable after use)</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <button type="button" id="create-fudge" class="primary">
+            <i class="fas fa-plus"></i> Create Fudge
+          </button>
+        </div>
+      </form>
+
+      <div class="help-section">
+        <h3>How to Use</h3>
+        <p>
+          <strong>Target User:</strong> Select which player's rolls should be affected, or "All Players" for everyone.
+        </p>
+        <p>
+          <strong>Roll Type:</strong> Choose what type of roll to modify (raw dice, total with modifiers, or system-specific).
+        </p>
+        <p>
+          <strong>Formula:</strong> Define the condition the roll must meet (e.g., "&gt; 15" means the roll must be greater than 15).
+        </p>
+        <p>
+          <strong>Persistent:</strong> If checked, the fudge will continue affecting rolls until manually disabled. Otherwise, it will be used once.
+        </p>
+      </div>
+    </div>
+
+    <!-- Active Fudges Tab -->
+    <div class="tab" data-group="primary-tabs" data-tab="active">
+      <div class="fudge-controls">
+        <button type="button" id="clear-all-fudges" class="danger">
+          <i class="fas fa-trash"></i> Clear All Fudges
+        </button>
+      </div>
+
+      <div class="fudge-list">
+        {{#if fudges.length}}
+          {{#each fudges}}
+          <div class="fudge-item {{#unless active}}inactive{{/unless}}">
+            <div class="fudge-info">
+              <div class="fudge-user">{{userName}}</div>
+              <div class="fudge-formula">{{formula}} ({{rollType}})</div>
+              <div class="fudge-status">
+                <span class="status-badge {{#if active}}active{{else}}inactive{{/if}}">
+                  {{#if active}}Active{{else}}Used{{/if}}
+                </span>
+                {{#if persistent}}
+                <span class="status-badge persistent">
+                  <i class="fas fa-sync-alt"></i> Persistent
+                </span>
+                {{/if}}
+              </div>
+            </div>
+            <div class="fudge-actions">
+              <button 
+                type="button" 
+                class="toggle-active"
+                data-fudge-id="{{id}}"
+                title="{{#if active}}Disable{{else}}Enable{{/if}}"
+              >
+                <i class="fas fa-{{#if active}}pause{{else}}play{{/if}}"></i>
+              </button>
+              <button 
+                type="button" 
+                class="toggle-persistent"
+                data-fudge-id="{{id}}"
+                title="{{#if persistent}}Disable Persistent{{else}}Enable Persistent{{/if}}"
+              >
+                <i class="fas fa-sync-alt"></i>
+              </button>
+              <button 
+                type="button" 
+                class="delete-fudge danger"
+                data-fudge-id="{{id}}"
+                title="Delete"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          {{/each}}
+        {{else}}
+          <p class="no-fudges">No active fudges. Create one in the "Create Fudge" tab.</p>
+        {{/if}}
+      </div>
+    </div>
+  </section>
+</div>

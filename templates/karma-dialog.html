@@ -1,0 +1,205 @@
+<div class="die-hard karma-dialog">
+  <nav class="tabs" data-group="primary-tabs">
+    <a class="item" data-tab="config">Configuration</a>
+    <a class="item" data-tab="history">Roll History</a>
+  </nav>
+
+  <section class="content">
+    <!-- Configuration Tab -->
+    <div class="tab" data-group="primary-tabs" data-tab="config">
+      <form id="karma-config-form">
+        <!-- Simple Karma -->
+        <div class="karma-section">
+          <h3>Simple Karma</h3>
+          <p class="description">
+            If all rolls in the history are below the threshold, ensure the next roll meets the minimum value.
+          </p>
+
+          <div class="checkbox-group">
+            <input 
+              type="checkbox" 
+              name="simple-enabled" 
+              id="simple-enabled"
+              {{#if config.simple.enabled}}checked{{/if}}
+            />
+            <label for="simple-enabled">Enable Simple Karma</label>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="simple-history-size">History Size</label>
+              <input 
+                type="number" 
+                name="simple-history-size" 
+                id="simple-history-size"
+                class="simple-field"
+                value="{{config.simple.historySize}}"
+                min="1"
+                max="50"
+                {{#unless config.simple.enabled}}disabled{{/unless}}
+              />
+              <small>Number of previous rolls to check</small>
+            </div>
+
+            <div class="form-group">
+              <label for="simple-threshold">Threshold</label>
+              <input 
+                type="number" 
+                name="simple-threshold" 
+                id="simple-threshold"
+                class="simple-field"
+                value="{{config.simple.threshold}}"
+                min="1"
+                {{#unless config.simple.enabled}}disabled{{/unless}}
+              />
+              <small>All rolls must be below this value</small>
+            </div>
+
+            <div class="form-group">
+              <label for="simple-min-value">Minimum Value</label>
+              <input 
+                type="number" 
+                name="simple-min-value" 
+                id="simple-min-value"
+                class="simple-field"
+                value="{{config.simple.minValue}}"
+                min="1"
+                {{#unless config.simple.enabled}}disabled{{/unless}}
+              />
+              <small>Next roll will be at least this value</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Average Karma -->
+        <div class="karma-section">
+          <h3>Average Karma</h3>
+          <p class="description">
+            If the average of rolls in the history is below the threshold, increase the next roll.
+          </p>
+
+          <div class="checkbox-group">
+            <input 
+              type="checkbox" 
+              name="average-enabled" 
+              id="average-enabled"
+              {{#if config.average.enabled}}checked{{/if}}
+            />
+            <label for="average-enabled">Enable Average Karma</label>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="average-history-size">History Size</label>
+              <input 
+                type="number" 
+                name="average-history-size" 
+                id="average-history-size"
+                class="average-field"
+                value="{{config.average.historySize}}"
+                min="1"
+                max="100"
+                {{#unless config.average.enabled}}disabled{{/unless}}
+              />
+              <small>Number of rolls to average</small>
+            </div>
+
+            <div class="form-group">
+              <label for="average-threshold">Threshold</label>
+              <input 
+                type="number" 
+                name="average-threshold" 
+                id="average-threshold"
+                class="average-field"
+                value="{{config.average.threshold}}"
+                min="1"
+                {{#unless config.average.enabled}}disabled{{/unless}}
+              />
+              <small>Trigger if average is below this</small>
+            </div>
+
+            <div class="form-group">
+              <label for="average-adjustment">Adjustment</label>
+              <input 
+                type="number" 
+                name="average-adjustment" 
+                id="average-adjustment"
+                class="average-field"
+                value="{{config.average.adjustment}}"
+                min="1"
+                {{#unless config.average.enabled}}disabled{{/unless}}
+              />
+              <small>Amount to increase roll by</small>
+            </div>
+          </div>
+
+          <div class="checkbox-group">
+            <input 
+              type="checkbox" 
+              name="average-cumulative" 
+              id="average-cumulative"
+              class="average-field"
+              {{#if config.average.cumulative}}checked{{/if}}
+              {{#unless config.average.enabled}}disabled{{/unless}}
+            />
+            <label for="average-cumulative">
+              Cumulative (increases each roll: +X, +2X, +3X, etc.)
+            </label>
+          </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="form-group">
+          <button type="button" id="save-karma-config" class="primary">
+            <i class="fas fa-save"></i> Save Configuration
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab" data-group="primary-tabs" data-tab="history">
+      <div class="karma-controls">
+        <button type="button" id="clear-all-history" class="danger">
+          <i class="fas fa-trash"></i> Clear All History
+        </button>
+      </div>
+
+      <div class="roll-history">
+        {{#if history.length}}
+          {{#each history}}
+          <div class="history-user">
+            <div class="user-name">{{userName}}</div>
+            <div class="user-stats">
+              <div class="stat">
+                <span class="stat-label">Total Rolls:</span>
+                <span class="stat-value">{{count}}</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Average:</span>
+                <span class="stat-value">{{average}}</span>
+              </div>
+            </div>
+            <div class="roll-values">
+              {{#each rolls}}
+              <span class="roll-value">{{value}}</span>
+              {{/each}}
+            </div>
+            <div class="user-actions">
+              <button 
+                type="button" 
+                class="clear-user-history"
+                data-user-id="{{userId}}"
+              >
+                <i class="fas fa-trash"></i> Clear History
+              </button>
+            </div>
+          </div>
+          {{/each}}
+        {{else}}
+          <p class="no-history">No roll history yet. Rolls will be tracked automatically.</p>
+        {{/if}}
+      </div>
+    </div>
+  </section>
+</div>

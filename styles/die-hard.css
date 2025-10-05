@@ -1,0 +1,372 @@
+/**
+ * Die Hard Module Styles
+ */
+
+/* Control Buttons */
+.die-hard-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 4px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.die-hard-control:hover {
+  background: rgba(0, 0, 0, 0.5);
+  transform: scale(1.05);
+}
+
+.die-hard-control.active {
+  background: rgba(255, 140, 0, 0.5);
+  color: #ff8c00;
+}
+
+.die-hard-control.paused {
+  background: rgba(128, 128, 128, 0.5);
+  color: #808080;
+}
+
+.die-hard-control i {
+  font-size: 16px;
+}
+
+/* Dialog Styling */
+.die-hard {
+  font-family: "Signika", sans-serif;
+}
+
+.die-hard .window-content {
+  background: url("../ui/parchment.jpg") repeat;
+  padding: 10px;
+}
+
+.die-hard .tabs {
+  border-bottom: 2px solid #782e22;
+  margin-bottom: 10px;
+}
+
+.die-hard .tabs .item {
+  padding: 8px 16px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #4b4a44;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.die-hard .tabs .item:hover {
+  color: #000;
+  text-shadow: 0 0 10px rgba(255, 68, 0, 0.5);
+}
+
+.die-hard .tabs .item.active {
+  color: #782e22;
+  border-bottom: 2px solid #782e22;
+}
+
+/* Form Styling */
+.die-hard .form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.die-hard .form-group label {
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #4b4a44;
+}
+
+.die-hard .form-group input,
+.die-hard .form-group select {
+  padding: 6px 10px;
+  border: 1px solid #7a7971;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.die-hard .form-group input:focus,
+.die-hard .form-group select:focus {
+  outline: none;
+  border-color: #782e22;
+  box-shadow: 0 0 5px rgba(120, 46, 34, 0.3);
+}
+
+.die-hard .form-group input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+}
+
+.die-hard .form-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.die-hard .form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* Button Styling */
+.die-hard button {
+  padding: 8px 16px;
+  border: 1px solid #782e22;
+  border-radius: 3px;
+  background: linear-gradient(to bottom, #c9c9c9, #7a7971);
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.die-hard button:hover {
+  background: linear-gradient(to bottom, #d9d9d9, #8a8981);
+  box-shadow: 0 0 10px rgba(120, 46, 34, 0.3);
+}
+
+.die-hard button:active {
+  transform: translateY(1px);
+}
+
+.die-hard button.primary {
+  background: linear-gradient(to bottom, #ff6400, #c94e00);
+  color: #fff;
+  border-color: #8b3500;
+}
+
+.die-hard button.primary:hover {
+  background: linear-gradient(to bottom, #ff7400, #d95e00);
+}
+
+.die-hard button.danger {
+  background: linear-gradient(to bottom, #c92a2a, #a51d1d);
+  color: #fff;
+  border-color: #7d1212;
+}
+
+.die-hard button.danger:hover {
+  background: linear-gradient(to bottom, #d93a3a, #b52d2d);
+}
+
+/* Fudge List */
+.fudge-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.fudge-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid #7a7971;
+  border-radius: 3px;
+}
+
+.fudge-item:last-child {
+  margin-bottom: 0;
+}
+
+.fudge-item .fudge-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fudge-item .fudge-user {
+  font-weight: bold;
+  color: #782e22;
+}
+
+.fudge-item .fudge-formula {
+  font-family: "Courier New", monospace;
+  font-size: 14px;
+  color: #4b4a44;
+}
+
+.fudge-item .fudge-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #666;
+}
+
+.fudge-item .fudge-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.fudge-item .fudge-actions button {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.fudge-item.inactive {
+  opacity: 0.5;
+}
+
+.fudge-item .status-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.fudge-item .status-badge.active {
+  background: #4caf50;
+  color: #fff;
+}
+
+.fudge-item .status-badge.inactive {
+  background: #9e9e9e;
+  color: #fff;
+}
+
+.fudge-item .status-badge.persistent {
+  background: #2196f3;
+  color: #fff;
+  margin-left: 4px;
+}
+
+/* Karma Configuration */
+.karma-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid #7a7971;
+  border-radius: 3px;
+}
+
+.karma-section h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #782e22;
+  border-bottom: 2px solid #782e22;
+  padding-bottom: 5px;
+}
+
+.karma-section .checkbox-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.karma-section .checkbox-group label {
+  margin-bottom: 0;
+}
+
+/* Roll History */
+.roll-history {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 10px;
+}
+
+.history-user {
+  margin-bottom: 15px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid #7a7971;
+  border-radius: 3px;
+}
+
+.history-user .user-name {
+  font-weight: bold;
+  font-size: 16px;
+  color: #782e22;
+  margin-bottom: 5px;
+}
+
+.history-user .user-stats {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #4b4a44;
+}
+
+.history-user .user-stats .stat {
+  display: flex;
+  gap: 4px;
+}
+
+.history-user .user-stats .stat-label {
+  font-weight: bold;
+}
+
+.history-user .roll-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.history-user .roll-values .roll-value {
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+}
+
+.history-user .user-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Whisper Styling */
+.die-hard-whisper {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-left: 3px solid #782e22;
+}
+
+.die-hard-whisper h3 {
+  margin-top: 0;
+  color: #782e22;
+}
+
+.die-hard-whisper p {
+  margin: 4px 0;
+}
+
+.die-hard-whisper em {
+  color: #666;
+  font-style: italic;
+}
+
+/* Scrollbar Styling */
+.die-hard ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.die-hard ::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.die-hard ::-webkit-scrollbar-thumb {
+  background: rgba(120, 46, 34, 0.6);
+  border-radius: 4px;
+}
+
+.die-hard ::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 46, 34, 0.8);
+}
