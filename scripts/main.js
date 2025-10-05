@@ -49,11 +49,18 @@ Hooks.once('ready', () => {
     return;
   }
   
+  console.log(`${MODULE_TITLE} | GM user detected, initializing controls`);
+  
   // Add control buttons to the UI
   addControlButtons();
   
   // Hook into dice rolls
   setupDiceRollHooks();
+  
+  console.log(`${MODULE_TITLE} | Fully initialized and ready`);
+  console.log(`${MODULE_TITLE} | Fudge enabled: ${game.settings.get(MODULE_ID, 'enableFudge')}`);
+  console.log(`${MODULE_TITLE} | Karma enabled: ${game.settings.get(MODULE_ID, 'enableKarma')}`);
+  console.log(`${MODULE_TITLE} | Debug logging: ${game.settings.get(MODULE_ID, 'debugLogging')}`);
 });
 
 /**
@@ -93,7 +100,7 @@ function registerSettings() {
     scope: 'world',
     config: true,
     type: Boolean,
-    default: false
+    default: true  // Enabled by default for initial testing
   });
   
   // Active fudges storage
@@ -249,16 +256,18 @@ function setupDiceRollHooks() {
     // Check if this is a roll message
     if (!message.rolls || message.rolls.length === 0) return true;
     
+    log('Processing roll from user:', userId, 'Message:', message);
+    
     const manipulator = game.diehard.manipulator;
     
     // Process each roll
     for (let roll of message.rolls) {
       if (fudgeEnabled) {
-        manipulator.processFudge(roll, message.speaker);
+        manipulator.processFudge(roll, userId);
       }
       
       if (karmaEnabled) {
-        manipulator.processKarma(roll, message.speaker);
+        manipulator.processKarma(roll, userId);
       }
     }
     
@@ -274,8 +283,10 @@ function setupDiceRollHooks() {
     
     if (!message.rolls || message.rolls.length === 0) return;
     
+    log('Updating roll history for user:', userId);
+    
     const manipulator = game.diehard.manipulator;
-    manipulator.updateRollHistory(message.rolls, message.speaker);
+    manipulator.updateRollHistory(message.rolls, userId);
   });
 }
 
