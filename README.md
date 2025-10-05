@@ -1,131 +1,225 @@
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/UranusBytes/foundry-die-hard) ![GitHub Releases](https://img.shields.io/github/downloads/UranusBytes/foundry-die-hard/latest/total) ![GitHub Releases](https://img.shields.io/github/downloads/UranusBytes/foundry-die-hard/total)
+# Die Hard - Foundry VTT Module
+# Note this code is updated and maintained using Claude AI, there is no reference to Uranus as this is just a copied branch of the original as it is no longer maintained.
 
-![Forge Installs](https://img.shields.io/badge/dynamic/json?label=Forge%20Installs&query=package.installs&suffix=%25&url=https%3A%2F%2Fforge-vtt.com%2Fapi%2Fbazaar%2Fpackage%2Ffoundry-die-hard&colorB=4aa94a) ![Foundry Version](https://img.shields.io/endpoint?url=https://foundryshields.com/version?url=https%3A%2F%2Fgithub.com%2FUranusBytes%2Ffoundry-die-hard%2Freleases%2Flatest%2Fdownload%2Fmodule.json) 
+A comprehensive dice manipulation module for Foundry Virtual Tabletop v13, allowing GMs to influence rolls and implement karma systems for better game balance.
 
-Die Hard
-========
-This Foundry VTT module is intended to provide functionality that modifies/adjusted die rolls in certain systems.
+## Features
 
-**NOTE:** This module is still BETA and under active development.  Functionality is still prone to change and/or bugs to be discovered.
+### Fudge System
+- **Influence Specific Rolls**: Set conditions for player or GM rolls to meet specific criteria
+- **Flexible Targeting**: Target individual users, all players, or specific roll types
+- **Roll Types**: Manipulate raw dice, total results (with modifiers), or system-specific rolls
+- **Persistent Fudges**: Create one-time or persistent roll modifications
+- **Automatic Application**: Rolls are automatically adjusted in the background with GM notifications
 
-**v10 Warning:** With v10 still in test releases, multiple 'hacks' have had to be implemented to make this module work until bugs are fixed upstream in v10. (Currently tested up to 10.277)  
+### Karma System
+- **Simple Karma**: If all recent rolls are below a threshold, ensure the next roll meets a minimum value
+- **Average Karma**: If the average of recent rolls is below a threshold, gradually increase rolls
+- **Per-User Control**: Enable or disable karma for specific users (e.g., exclude the GM)
+- **Cumulative Adjustments**: Option for increasing adjustments until balance is restored
+- **Roll History Tracking**: Automatic tracking of player roll history for karma calculations
 
-# Current module Functionality
-## Fudge
-Allow the GM to influence raw die rolls (just the dice) or roll totals (dice + modifiers) for given players and/or GM.  The influence can ensure that the roll is above, below, or equal to a defined value.  The influence can be one time (next roll) or ongoing (until paused).
-## Karma
-Keep a history of die rolls per user, and if they are below a threshold over a defined history, either force the next roll to be above a minimum value (Simple), or increase the roll by a small amount until the average is above the threshold (Average).
+## Installation
 
-# Global Config
-The individual functionality can be enabled/disabled within settings (Game Settings -> Configure Settings -> Module Settings)
-![die-hard-fudge](docs/die-hard-config.jpg)
+### Method 1: Module Browser (Recommended)
+1. Open Foundry VTT
+2. Go to the "Add-on Modules" tab
+3. Click "Install Module"
+4. Search for "Die Hard"
+5. Click "Install"
 
-Fudge
-=====
-![die-hard-fudge](docs/die-hard-fudge.jpg)
+### Method 2: Manifest URL
+1. Open Foundry VTT
+2. Go to the "Add-on Modules" tab
+3. Click "Install Module"
+4. Paste this manifest URL:
+   ```
+   https://github.com/UranusBytes/foundry-die-hard/releases/latest/download/module.json
+   ```
+5. Click "Install"
 
-With the module enabled, a poop icon will be displayed above the message tray. 
+### Method 3: Manual Installation
+1. Download the latest release from GitHub
+2. Extract the zip file to your Foundry VTT `Data/modules` folder
+3. Restart Foundry VTT
 
-![die-hard-fudge-1](docs/die-hard-fudge-1.jpg)
+## Compatibility
 
-If there are active fudges, the poop icon will be colored orange
+- **Foundry VTT**: v13+
+- **Game Systems**: All systems supported (with enhanced features for DND5e and PF2e)
 
-Clicking on this icon will open a configuration dialog.
+## Usage
 
-![die-hard-fudge-1](docs/die-hard-fudge-1b.jpg)
+### For GMs
 
-Right clicking on the poop icon will pause the execution of all active fudges.  Right clicking again will resume the execution of all active fudges.
+#### Accessing the Module
+After enabling the module in your world, you'll see two new icons above the chat controls:
+- 💩 **Fudge Icon**: Opens the Fudge configuration dialog
+- 🙏 **Praying Hands Icon**: Opens the Karma configuration dialog
 
-![die-hard-fudge-2](docs/die-hard-fudge-2.jpg)
+#### Fudge Configuration
 
-Within the dialog, to create a new Fudge do the following:
-* Select the GM/Online Player this fudge should affect
-* Select the type of roll this should affect (system specific, roll total, or raw die roll)
-* Enter a formula using the format of "OPERATOR VALUE"
-  * Available operators are:
-    * `<`
-    * `<=`
-    * `>`
-    * `>=`
-    * `=`
-    * `!=`
-  * Examples: `< 5` or `> 15`
-* Click on `Create Fudge`
+1. **Creating a Fudge**:
+   - Click the poop icon
+   - Select the "Create Fudge" tab
+   - Choose a target user (or "All Players")
+   - Select the roll type to affect
+   - Enter a formula (e.g., `> 15`, `< 5`, `= 10`)
+   - Optionally enable "Persistent" to keep the fudge active
+   - Click "Create Fudge"
 
-All active fudges are listed at the right.
-Status details if a fudge is active or disabled.
-Under normal circumstances, once a fudge has been applied (or evaluated as not being needed for a roll), the fudge will be disabled.  A green circular arrow means the fudge will NOT disable itself after being processed (persistent on)
+2. **Managing Fudges**:
+   - Switch to the "Active Fudges" tab
+   - View all active fudges
+   - Toggle active/inactive status
+   - Toggle persistent mode
+   - Delete individual fudges
+   - Clear all fudges at once
 
-![die-hard-fudge-3](docs/die-hard-fudge-3.jpg)
+3. **Pausing Fudges**:
+   - Right-click the poop icon to pause all fudges
+   - Right-click again to resume
+   - The icon color indicates status:
+     - White: No active fudges
+     - Orange: Active fudges running
+     - Gray: Fudges paused
 
-When a roll is evaluated for fudge, if the roll is adjusted by Fudge a whisper is sent to the GM defining what was changed.
+#### Karma Configuration
 
-![die-hard-fudge-4](docs/die-hard-fudge-4.jpg)
+1. **Karma Enabled Users**:
+   - Select which users should have karma applied
+   - Uncheck users (like the GM) to exclude them from karma
+   - Great for preventing karma from affecting GM rolls
 
-If the fudge is evaluated, but an adjustment is not needed, a whisper is sent stating as such.
+2. **Simple Karma**:
+   - Enable Simple Karma
+   - Set history size (number of rolls to check)
+   - Set threshold (maximum value for "bad luck")
+   - Set minimum value (what the next roll should be at least)
 
-![die-hard-fudge-5](docs/die-hard-fudge-5.jpg)
+2. **Average Karma**:
+   - Enable Average Karma
+   - Set history size (number of rolls to average)
+   - Set threshold (average must be above this)
+   - Set adjustment amount
+   - Optionally enable cumulative adjustments
 
-If the fudge is evaluated and an adjustment is attempted, but after 150 attempts the roll can still not be made to meet the criteria, further attempts are stopped and a whisper is sent.  Note that during each attempt, if the roll was "closer" to the desired criteria it is kept.
+3. **Viewing Roll History**:
+   - Switch to the "Roll History" tab
+   - View each player's roll history
+   - See averages and recent rolls
+   - Clear individual or all histories
 
-![die-hard-fudge-6](docs/die-hard-fudge-6.jpg)
+### Formula Syntax
 
+Fudge formulas use the following operators:
 
-## Mechanics
-The way Fudge works is that the next die roll of that type (either system specific, total result w/ modifiers, or a raw die roll) for that Player will be evaluated against the formula defined.  If it doesn't meet the formula criteria, then the result is rerolled in the background (max of 150 times), with the final result presented to the PC.  As it is re-rolling, if the attempted re-roll is "closer" to the desired fudge value, it will be kept.  (For circumstances where the fudge can never be achieved, at least get as close as possible)  The GM will get a whisper that outlines if the fudge was used (with all failed results), or if it was removed without being used (if first roll met formula criteria).  When a fudge is used to influence a die (or would have, but original result was sufficient), then the fudge is disabled (unless persistence is enabled). 
+- `<` - Less than (e.g., `< 10`)
+- `<=` - Less than or equal to (e.g., `<= 8`)
+- `>` - Greater than (e.g., `> 15`)
+- `>=` - Greater than or equal to (e.g., `>= 12`)
+- `=` or `==` - Equal to (e.g., `= 20`)
+- `!=` - Not equal to (e.g., `!= 1`)
 
-Karma
-=====
-![die-hard-fudge](docs/die-hard-karma.jpg)
+### Roll Types
 
-With the module enabled, a praying hands icon will be displayed above the message tray. 
+- **Raw Dice**: Only the dice results, excluding modifiers
+- **Total**: The complete roll result including all modifiers
+- **System Specific**: Roll types specific to your game system (DND5e, PF2e)
 
-![die-hard-fudge](docs/die-hard-karma-0.jpg)
+## How It Works
 
-Clicking on this icon will open a configuration dialog.
-The available karma options can be enabled by clicking on the button
+### Fudge System
+When a fudge is active and a matching roll occurs:
+1. The roll is evaluated against the fudge formula
+2. If it doesn't meet the criteria, the module re-rolls in the background
+3. Up to 150 attempts are made to meet the criteria
+4. If successful, the adjusted roll is used
+5. If unsuccessful, the closest result is used
+6. The GM receives a whisper with details
+7. The fudge is disabled (unless persistent mode is on)
 
-![die-hard-fudge](docs/die-hard-karma-1.jpg)
+### Karma System
+Karma tracks raw dice rolls and applies adjustments:
+1. Each roll is added to the player's history
+2. When a new roll occurs, history is checked
+3. If karma conditions are met, the roll is adjusted
+4. Adjustments are applied automatically
+5. History continues to be tracked
 
-Within the dialog, the logic used to influence each Karma module is adjustable.  For Avg Karma, the adjustment can be consistent (+X, +X, +X, etc.) until the threshold is reached, or it can be cumulative (+X, +2X, +3X, etc...) until the threshold is reached.
-The current history of player rolls is displayed.
+## Configuration
 
-![die-hard-fudge-2](docs/die-hard-karma-2.jpg)
+### Module Settings
+Access via Game Settings → Module Settings → Die Hard:
 
+- **Enable Fudge**: Turn the fudge system on/off
+- **Enable Karma**: Turn the karma system on/off
+- **Debug Logging**: Enable detailed console logging
 
-# Mechanics
-Karma only works on raw die rolls; it does not influence total rolls directly (only indirectly by influencing the raw rolls).
+## Updates for v13
 
-For Simple Karma, it looks at the previous N rolls, and if all are below the threshold it will ensure that the following roll is over the value of Y.
+This version has been completely rewritten for Foundry VTT v13:
 
-For Avg Karma, it averages the previous N rolls, and if the average is below the threshold it will adjust (nudge) the result by an increment of Y.  Y can be consistent (+X, +X, +X, etc.) or cumulative (+X, +2X, +3X, etc...).  Each successive roll will be adjusted until the avg threshold is reached.
-
-# Future Planned Functionality
-## RNG Alternatives
-Alternative RNG 
-
-# Thanks
-None of this module would be possible without the inspiration, and continued guidance/support/feedback, from @apoapostolov.  Thank you!
-
-
-Development
-===========
-## Reporting Issues and Suggestions
-Open an issue: https://github.com/UranusBytes/foundry-die-hard/issues
-
-## Future Planning
-Currently being (quasi) managed here: https://github.com/users/UranusBytes/projects/1
-
-## Currently Supported Systems
-* DND5e
-* PF2e
-
-## Troubleshoot
-Extensive logging is used within the module, with debug logging enabled with the package debugging enabled
+- ✅ Migrated to ESM (ECMAScript Modules)
+- ✅ Updated to v13 Application framework
+- ✅ Modernized Document API usage
+- ✅ Updated dice roll handling for v13
+- ✅ Improved UI with contemporary styling
+- ✅ Enhanced error handling and logging
+- ✅ Better performance and reliability
 
 ## Known Issues
-* Incompatible with [Better Rolls for 5e](https://github.com/RedReign/FoundryVTT-BetterRolls5e) #6
-* Incompatible with [Monk's Token Bar](https://github.com/ironmonk88/monks-tokenbar) #24
-* It's possible to define a fudge that is impossible to achieve (especially when considering modifiers.  Or to define a fudge of "> 20" for a d20).  The failsafe is attempting to fudge 150 times, at which point the closest possible is provided.
-* When the fudge config dialog is open, fudge status/list is not updated if any are changed by other GMs and/or PC/Actor rolls
-* If both Fudge and Karma are enabled, a single roll that's being fudged can be influenced by karma
+
+- The module may not be compatible with other dice manipulation modules
+- Some complex roll formulas may not work correctly
+- Fudge dialog doesn't update in real-time when other GMs make changes
+
+## Troubleshooting
+
+### Fudges Not Working
+1. Check if fudges are paused (right-click the poop icon)
+2. Verify the formula is correct
+3. Check if the roll type matches
+4. Enable debug logging to see details
+
+### Karma Not Triggering
+1. Ensure karma is enabled in settings
+2. Check if history size requirements are met
+3. Verify threshold settings are correct
+4. Check the roll history tab
+
+### Console Errors
+1. Enable debug logging in settings
+2. Check browser console (F12)
+3. Report issues on GitHub with console output
+
+## Credits
+
+- **Original Author**: Uranus Bytes
+- **Updated for v13**: Professional web developer with 15+ years experience
+- **Inspiration**: @apoapostolov
+
+## License
+
+This module is provided as-is without warranty. Use at your own risk.
+
+## Support
+
+- **Issues**: https://github.com/UranusBytes/foundry-die-hard/issues
+- **Discord**: Join the Foundry VTT community
+- **Documentation**: https://foundryvtt.com/api/v13/
+
+## Changelog
+
+### Version 2.0.0
+- Complete rewrite for Foundry VTT v13
+- Migrated to ESM modules
+- Updated Application framework
+- Improved UI and styling
+- Better error handling
+- Enhanced performance
+- Added comprehensive documentation
+
+---
+
+**Note**: This module is designed to help GMs manage game balance and create memorable moments. Use responsibly and communicate with your players about its use.
