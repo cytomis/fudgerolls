@@ -16,6 +16,9 @@ A comprehensive dice manipulation module for Foundry Virtual Tabletop v13, allow
 - **Simple Karma**: If all recent rolls are below a threshold, ensure the next roll meets a minimum value
 - **Average Karma**: If the average of recent rolls is below a threshold, gradually increase rolls
 - **Per-User Control**: Enable or disable karma for specific users (e.g., exclude the GM)
+- **Real-Time Statistics**: View current averages and roll statistics for all players
+- **Quick Stats**: Right-click karma button for instant statistics in chat
+- **Visual Indicators**: See at a glance when karma would trigger for players
 - **Cumulative Adjustments**: Option for increasing adjustments until balance is restored
 - **Roll History Tracking**: Automatic tracking of player roll history for karma calculations
 
@@ -54,8 +57,8 @@ A comprehensive dice manipulation module for Foundry Virtual Tabletop v13, allow
 
 #### Accessing the Module
 After enabling the module in your world, you'll see two new icons above the chat controls:
-- 💩 **Fudge Icon**: Opens the Fudge configuration dialog
-- 🙏 **Praying Hands Icon**: Opens the Karma configuration dialog
+- 💩 **Fudge Icon**: Opens the Fudge configuration dialog (Right-click to pause/resume all fudges)
+- 🙏 **Praying Hands Icon**: Opens the Karma configuration dialog (Right-click for quick statistics)
 
 #### Fudge Configuration
 
@@ -86,12 +89,20 @@ After enabling the module in your world, you'll see two new icons above the chat
 
 #### Karma Configuration
 
-1. **Karma Enabled Users**:
+1. **Statistics Tab** (Default):
+   - View real-time averages for all players
+   - See statistics based on configured history sizes
+   - Visual indicators show when karma would trigger
+   - Displays overall average, recent averages, min/max, and recent rolls
+   - Cards highlight in orange when karma would be applied
+   - Shows GM and offline status for each player
+
+2. **Karma Enabled Users**:
    - Select which users should have karma applied
    - Uncheck users (like the GM) to exclude them from karma
    - Great for preventing karma from affecting GM rolls
 
-2. **Simple Karma**:
+3. **Simple Karma**:
    - Enable Simple Karma
    - Set history size (number of rolls to check)
    - Set threshold (maximum value for "bad luck")
@@ -109,6 +120,26 @@ After enabling the module in your world, you'll see two new icons above the chat
    - View each player's roll history
    - See averages and recent rolls
    - Clear individual or all histories
+
+### Viewing Statistics
+
+**Quick View (Right-click method)**:
+1. Right-click the 🙏 Praying Hands icon
+2. A chat message appears with current statistics for all players
+3. Shows average, min, max, and total roll count
+4. Sorted by average (lowest first)
+
+**Detailed View (Statistics Tab)**:
+1. Click the 🙏 Praying Hands icon to open Karma Configuration
+2. The Statistics tab opens by default
+3. View comprehensive statistics for each player:
+   - Overall average across all rolls
+   - Average for Simple Karma history size
+   - Average for Average Karma history size
+   - Min and Max values
+   - Visual list of recent rolls
+   - Warning indicators when karma would trigger
+4. Cards highlight in orange when karma conditions are met
 
 ### Formula Syntax
 
