@@ -105,6 +105,45 @@ export class DieHardConfig {
   }
   
   /**
+   * Get karma enabled users
+   */
+  getKarmaEnabledUsers() {
+    return game.settings.get(MODULE_ID, 'karmaEnabledUsers') || {};
+  }
+  
+  /**
+   * Set karma enabled users
+   */
+  async setKarmaEnabledUsers(users) {
+    return await game.settings.set(MODULE_ID, 'karmaEnabledUsers', users);
+  }
+  
+  /**
+   * Check if karma is enabled for a specific user
+   */
+  isKarmaEnabledForUser(userId) {
+    const enabledUsers = this.getKarmaEnabledUsers();
+    // If no users are specified, karma is enabled for all
+    if (Object.keys(enabledUsers).length === 0) {
+      return true;
+    }
+    return enabledUsers[userId] === true;
+  }
+  
+  /**
+   * Toggle karma for a user
+   */
+  async toggleKarmaForUser(userId, enabled) {
+    const enabledUsers = this.getKarmaEnabledUsers();
+    if (enabled) {
+      enabledUsers[userId] = true;
+    } else {
+      delete enabledUsers[userId];
+    }
+    await this.setKarmaEnabledUsers(enabledUsers);
+  }
+  
+  /**
    * Get roll history
    */
   getRollHistory() {
