@@ -30,6 +30,18 @@ export class KarmaDialog extends Application {
     // Add karma configuration
     data.config = this.config;
     
+    // Get online users with karma enabled status
+    data.users = game.users.map(u => {
+      const enabled = game.diehard.config.isKarmaEnabledForUser(u.id);
+      return {
+        id: u.id,
+        name: u.name,
+        isGM: u.isGM,
+        active: u.active,
+        karmaEnabled: enabled
+      };
+    });
+    
     // Get roll history
     const history = game.diehard.config.getRollHistory();
     data.history = [];
@@ -66,6 +78,9 @@ export class KarmaDialog extends Application {
     
     // Toggle average karma
     html.find('#average-enabled').change(this._onToggleAverage.bind(this));
+    
+    // Toggle karma for individual users
+    html.find('.toggle-user-karma').change(this._onToggleUserKarma.bind(this));
     
     // Clear user history
     html.find('.clear-user-history').click(this._onClearUserHistory.bind(this));
@@ -121,6 +136,16 @@ export class KarmaDialog extends Application {
     form.querySelectorAll('.average-field').forEach(field => {
       field.disabled = !enabled;
     });
+  }
+  
+  async _onToggleUserKarma(event) {
+    const userId = event.currentTarget.dataset.userId;
+    const enabled = event.currentTarget.checked;
+    
+    await game.diehard.config.toggleKarmaForUser(userId, enabled);
+    
+    const user = game.users.get(userId);
+    ui.notifications.info(`Karma ${enabled ? 'enabled' : 'disabled'} for ${user.name}`);
   }
   
   async _onClearUserHistory(event) {
