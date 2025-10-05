@@ -421,3 +421,228 @@
 .die-hard ::-webkit-scrollbar-thumb:hover {
   background: rgba(120, 46, 34, 0.8);
 }
+
+/* Statistics Tab */
+.statistics-header {
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #782e22;
+}
+
+.statistics-header h3 {
+  margin: 0 0 5px 0;
+  color: #782e22;
+}
+
+.statistics-header .description {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.statistics-list {
+  max-height: 550px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.stat-card {
+  margin-bottom: 15px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid #7a7971;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.simple-triggered,
+.stat-card.average-triggered {
+  border-color: #ff9800;
+  background: rgba(255, 152, 0, 0.1);
+}
+
+.stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.stat-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.stat-user strong {
+  color: #782e22;
+}
+
+.gm-badge,
+.karma-disabled-badge,
+.offline-badge {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.gm-badge {
+  background: #2196f3;
+  color: #fff;
+}
+
+.karma-disabled-badge {
+  background: #9e9e9e;
+  color: #fff;
+}
+
+.offline-badge {
+  background: #757575;
+  color: #fff;
+}
+
+.stat-count {
+  font-size: 12px;
+  color: #666;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: bold;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #4b4a44;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-value.triggered {
+  color: #ff9800;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.stat-value.triggered i {
+  font-size: 16px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.stat-rolls {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #ddd;
+}
+
+.stat-rolls .stat-label {
+  margin-bottom: 6px;
+}
+
+.roll-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.roll-chip {
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.no-statistics {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.no-statistics i {
+  font-size: 48px;
+  margin-bottom: 15px;
+  color: #999;
+}
+
+.no-statistics p {
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+/* Quick Stats in Chat */
+.die-hard-stats {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-left: 3px solid #782e22;
+}
+
+.die-hard-stats h3 {
+  margin: 0 0 5px 0;
+  color: #782e22;
+}
+
+.die-hard-stats .stats-info {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+
+.die-hard-stats table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.die-hard-stats th {
+  background: rgba(120, 46, 34, 0.2);
+  padding: 6px 8px;
+  text-align: left;
+  font-weight: bold;
+  border-bottom: 2px solid #782e22;
+}
+
+.die-hard-stats td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.die-hard-stats tr:last-child td {
+  border-bottom: none;
+}
+
+.die-hard-stats tr:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
