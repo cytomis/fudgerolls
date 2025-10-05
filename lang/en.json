@@ -62,6 +62,13 @@
       "ConfigSaved": "Karma configuration saved",
       "HistoryCleared": "Roll history cleared",
       
+      "EnabledUsers": {
+        "Title": "Karma Enabled Users",
+        "Description": "Select which users should have karma applied to their rolls",
+        "Enabled": "Karma enabled for {name}",
+        "Disabled": "Karma disabled for {name}"
+      },
+      
       "Simple": {
         "Title": "Simple Karma",
         "Description": "If all rolls in history are below threshold, ensure next roll meets minimum value",
