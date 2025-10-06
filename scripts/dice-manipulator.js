@@ -56,10 +56,10 @@ export class DiceManipulator {
     if (!formula) {
       return { attempted: false, applied: false };
     }
-    
+
     const rollType = fudge.rollType || 'total';
     let targetValue;
-    
+
     // Determine what value to check/manipulate
     switch (rollType) {
       case 'raw':
@@ -75,7 +75,10 @@ export class DiceManipulator {
       default:
         targetValue = roll.total;
     }
-    
+
+    // Get original raw die value for GM message
+    const originalRawDieValue = this.getRawDiceTotal(roll);
+
     // Check if roll already meets criteria
     if (formula.test(targetValue, formula.value)) {
       log(`Roll ${targetValue} already meets formula ${fudge.formula}`);
@@ -84,18 +87,25 @@ export class DiceManipulator {
         applied: false,
         originalValue: targetValue,
         finalValue: targetValue,
+        originalRawDieValue: originalRawDieValue,
+        finalRawDieValue: originalRawDieValue,
         meetsCriteria: true
       };
     }
-    
+
     // Attempt to fudge the roll
     const result = this.attemptFudge(roll, formula, rollType);
-    
+
+    // Get final raw die value after fudge
+    const finalRawDieValue = this.getRawDiceTotal(roll);
+
     return {
       attempted: true,
       applied: result.success,
       originalValue: targetValue,
       finalValue: result.value,
+      originalRawDieValue: originalRawDieValue,
+      finalRawDieValue: finalRawDieValue,
       attempts: result.attempts,
       meetsCriteria: result.success
     };
@@ -192,28 +202,34 @@ export class DiceManipulator {
   /**
    * Send whisper to GM about fudge result
    */
-  async sendFudgeWhisper(result, fudge, userId) {
+  async sendFudgeWhisper(result, fudge, userId, roll) {
     const user = game.users.get(userId);
     const userName = user ? user.name : 'Unknown';
-    
+
+    // Get raw die values for display (not totals with modifiers)
+    const originalRawValue = result.originalRawDieValue || result.originalValue;
+    const finalRawValue = result.finalRawDieValue || result.finalValue;
+
     let content = `<div class="die-hard-whisper">
       <h3>Fudge Applied</h3>
       <p><strong>User:</strong> ${userName}</p>
       <p><strong>Formula:</strong> ${fudge.formula}</p>
-      <p><strong>Original:</strong> ${result.originalValue}</p>`;
-    
+      <p><strong>Original d20:</strong> ${originalRawValue}</p>`;
+
     if (result.applied) {
-      content += `<p><strong>Final:</strong> ${result.finalValue}</p>
+      content += `<p><strong>Final d20:</strong> ${finalRawValue}</p>
+        <p><strong>Adjustment:</strong> ${finalRawValue > originalRawValue ? '+' : ''}${finalRawValue - originalRawValue}</p>
         <p><strong>Attempts:</strong> ${result.attempts}</p>`;
     } else if (result.meetsCriteria) {
       content += `<p><em>Roll already met criteria</em></p>`;
     } else {
-      content += `<p><strong>Final (closest):</strong> ${result.finalValue}</p>
+      content += `<p><strong>Final d20 (closest):</strong> ${finalRawValue}</p>
+        <p><strong>Adjustment:</strong> ${finalRawValue > originalRawValue ? '+' : ''}${finalRawValue - originalRawValue}</p>
         <p><em>Could not meet criteria after ${this.maxAttempts} attempts</em></p>`;
     }
-    
+
     content += `</div>`;
-    
+
     await ChatMessage.create({
       content,
       whisper: [game.user.id],
@@ -264,21 +280,22 @@ export class DiceManipulator {
       log(`Simple Karma: Not enough history (${history.length}/${config.historySize})`);
       return;
     }
-    
+
     const recentRolls = history.slice(-config.historySize);
     const allBelowThreshold = recentRolls.every(r => r.value < config.threshold);
-    
+
     log(`Simple Karma check: ${recentRolls.length} rolls, all below ${config.threshold}? ${allBelowThreshold}`);
-    
+
     if (allBelowThreshold) {
-      const rawTotal = this.getRawDiceTotal(roll);
-      
-      log(`Simple Karma triggered! Raw total: ${rawTotal}, Minimum: ${config.minValue}`);
-      
-      if (rawTotal < config.minValue) {
+      const originalRawTotal = this.getRawDiceTotal(roll);
+
+      log(`Simple Karma triggered! Raw total: ${originalRawTotal}, Minimum: ${config.minValue}`);
+
+      if (originalRawTotal < config.minValue) {
         log(`Simple Karma: Adjusting roll to minimum ${config.minValue}`);
         this.adjustRollToMinimum(roll, config.minValue);
-        this.sendKarmaWhisper('Simple Karma', rawTotal, roll.total, config);
+        const finalRawTotal = this.getRawDiceTotal(roll);
+        this.sendKarmaWhisper('Simple Karma', originalRawTotal, finalRawTotal, config);
       }
     }
   }
@@ -298,20 +315,20 @@ export class DiceManipulator {
     log(`Average Karma check: Average of ${recentRolls.length} rolls = ${average.toFixed(2)}, Threshold: ${config.threshold}`);
 
     if (average < config.threshold) {
-      const rawTotal = this.getRawDiceTotal(roll);
-      const originalTotal = roll.total;
+      const originalRawTotal = this.getRawDiceTotal(roll);
 
       // Only apply karma if the current roll is below the threshold
-      if (rawTotal < config.threshold) {
+      if (originalRawTotal < config.threshold) {
         const adjustment = config.cumulative
           ? config.adjustment * (history.length - config.historySize + 1)
           : config.adjustment;
 
-        log(`Average Karma triggered! Current roll: ${rawTotal}, Adjustment: ${adjustment} (cumulative: ${config.cumulative})`);
+        log(`Average Karma triggered! Current roll: ${originalRawTotal}, Adjustment: ${adjustment} (cumulative: ${config.cumulative})`);
         this.adjustRollByAmount(roll, adjustment);
-        this.sendKarmaWhisper('Average Karma', originalTotal, roll.total, config);
+        const finalRawTotal = this.getRawDiceTotal(roll);
+        this.sendKarmaWhisper('Average Karma', originalRawTotal, finalRawTotal, config);
       } else {
-        log(`Average Karma: Current roll ${rawTotal} is not below threshold ${config.threshold}, no adjustment`);
+        log(`Average Karma: Current roll ${originalRawTotal} is not below threshold ${config.threshold}, no adjustment`);
       }
     }
   }
@@ -319,15 +336,16 @@ export class DiceManipulator {
   /**
    * Send whisper about karma adjustment
    */
-  async sendKarmaWhisper(type, originalValue, finalValue, config) {
+  async sendKarmaWhisper(type, originalRawValue, finalRawValue, config) {
+    const adjustment = finalRawValue - originalRawValue;
     const content = `<div class="die-hard-whisper karma-whisper">
       <h3>${type} Applied</h3>
-      <p><strong>Original Total:</strong> ${originalValue}</p>
-      <p><strong>Adjusted Total:</strong> ${finalValue}</p>
-      <p><strong>Adjustment:</strong> +${finalValue - originalValue}</p>
+      <p><strong>Original d20:</strong> ${originalRawValue}</p>
+      <p><strong>Adjusted d20:</strong> ${finalRawValue}</p>
+      <p><strong>Adjustment:</strong> ${adjustment > 0 ? '+' : ''}${adjustment}</p>
       <p class="karma-config"><em>Threshold: ${config.threshold}</em></p>
     </div>`;
-    
+
     await ChatMessage.create({
       content,
       whisper: [game.user.id],

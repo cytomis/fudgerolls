@@ -2,6 +2,28 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.12] - 2025-10-06
+
+### Fixed
+- **GM Whisper Now Shows Raw Die Values** - GM notifications now correctly display only the base die roll changes (e.g., "d20: 8 → 16") instead of showing the total with modifiers
+- **Removed Chat Card Display Modification** - The module no longer attempts to modify the displayed chat card text. Roll modifications happen at the Roll object level, so Foundry automatically displays the correct modified values
+- **Configuration Page Text Readability** - Updated CSS to use Foundry's theme variables (e.g., `--color-text-dark-primary`, `--color-bg-input`) for better readability across different themes
+- **Input Background Opacity Increased** - Changed input background from 0.8 to 0.9 opacity for better text contrast
+
+### Changed
+- GM whispers now show "Original d20" and "Adjusted d20" labels for clarity
+- Whispers include the adjustment amount (e.g., "+8") for quick reference
+- Simplified `createChatMessage` hook to only handle roll history, removed all DOM manipulation code
+- Configuration dialog styling now properly adapts to user's theme settings
+
+### Technical
+- Updated `sendFudgeWhisper()` to accept raw die values and display them instead of totals
+- Updated `sendKarmaWhisper()` to show raw d20 values instead of total values
+- Modified `applyFudge()` to track both original and final raw die values
+- Updated `processSimpleKarma()` and `processAverageKarma()` to pass raw die values to whisper
+- Added CSS variables with fallbacks for theme compatibility
+- Removed message flag storage that was used for display modification
+
 ## [2.3.11] - 2025-10-06
 
 ### Fixed
