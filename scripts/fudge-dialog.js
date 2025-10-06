@@ -5,34 +5,41 @@
 
 import { MODULE_ID, MODULE_TITLE } from './main.js';
 
-export class FudgeDialog extends Application {
+export class FudgeDialog extends foundry.applications.api.ApplicationV2 {
   constructor(options = {}) {
     super(options);
     this.fudges = game.diehard.config.getActiveFudges();
   }
   
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: 'die-hard-fudge-dialog',
+  static DEFAULT_OPTIONS = {
+    id: 'die-hard-fudge-dialog',
+    tag: 'div',
+    window: {
       title: `${MODULE_TITLE} - Fudge Configuration`,
-      template: 'modules/foundry-die-hard/templates/fudge-dialog.html',
-      classes: ['die-hard', 'fudge-dialog'],
+      resizable: true
+    },
+    classes: ['die-hard', 'fudge-dialog'],
+    position: {
       width: 800,
-      height: 600,
-      resizable: true,
-      tabs: [{ navSelector: '.tabs', contentSelector: '.content', initial: 'create' }]
-    });
-  }
+      height: 600
+    }
+  };
+
+  static PARTS = {
+    form: {
+      template: 'modules/foundry-die-hard/templates/fudge-dialog.html'
+    }
+  };
   
-  getData(options = {}) {
-    const data = super.getData(options);
+  async _prepareContext(options = {}) {
+    const context = await super._prepareContext(options);
     
     // Get online users
-    data.users = game.diehard.config.getOnlineUsers();
-    data.users.unshift({ id: 'all', name: 'All Players', isGM: false });
+    context.users = game.diehard.config.getOnlineUsers();
+    context.users.unshift({ id: 'all', name: 'All Players', isGM: false });
     
     // Get roll types
-    data.rollTypes = [
+    context.rollTypes = [
       { value: 'raw', label: 'Raw Dice' },
       { value: 'total', label: 'Total (with modifiers)' }
     ];
@@ -40,11 +47,11 @@ export class FudgeDialog extends Application {
     // Add system-specific roll types
     const systemTypes = game.diehard.config.getSystemRollTypes();
     if (systemTypes.length > 0) {
-      data.rollTypes.push(...systemTypes);
+      context.rollTypes.push(...systemTypes);
     }
     
     // Get active fudges
-    data.fudges = Object.values(this.fudges).map(f => {
+    context.fudges = Object.values(this.fudges).map(f => {
       const user = game.users.get(f.userId);
       return {
         ...f,
@@ -52,32 +59,38 @@ export class FudgeDialog extends Application {
       };
     });
     
-    return data;
+    return context;
   }
   
-  activateListeners(html) {
-    super.activateListeners(html);
+  _onRender(context, options) {
+    super._onRender(context, options);
     
     // Create fudge button
-    html.find('#create-fudge').click(this._onCreateFudge.bind(this));
+    this.element.querySelector('#create-fudge')?.addEventListener('click', this._onCreateFudge.bind(this));
     
     // Delete fudge buttons
-    html.find('.delete-fudge').click(this._onDeleteFudge.bind(this));
+    this.element.querySelectorAll('.delete-fudge').forEach(btn => {
+      btn.addEventListener('click', this._onDeleteFudge.bind(this));
+    });
     
     // Toggle persistent
-    html.find('.toggle-persistent').click(this._onTogglePersistent.bind(this));
+    this.element.querySelectorAll('.toggle-persistent').forEach(btn => {
+      btn.addEventListener('click', this._onTogglePersistent.bind(this));
+    });
     
     // Toggle active
-    html.find('.toggle-active').click(this._onToggleActive.bind(this));
+    this.element.querySelectorAll('.toggle-active').forEach(btn => {
+      btn.addEventListener('click', this._onToggleActive.bind(this));
+    });
     
     // Clear all fudges
-    html.find('#clear-all-fudges').click(this._onClearAll.bind(this));
+    this.element.querySelector('#clear-all-fudges')?.addEventListener('click', this._onClearAll.bind(this));
   }
   
   async _onCreateFudge(event) {
     event.preventDefault();
     
-    const form = event.currentTarget.form;
+    const form = this.element.querySelector('#fudge-create-form');
     const formData = new FormData(form);
     
     const userId = formData.get('user');
@@ -106,25 +119,25 @@ export class FudgeDialog extends Application {
     ui.notifications.info('Fudge created');
     
     // Refresh the dialog
-    this.render(true);
+    this.render();
   }
   
   async _onDeleteFudge(event) {
     event.preventDefault();
     
-    const fudgeId = event.currentTarget.dataset.fudgeId;
+    const fudgeId = event.target.closest('[data-fudge-id]').dataset.fudgeId;
     
     await game.diehard.config.removeFudge(fudgeId);
     
     ui.notifications.info('Fudge removed');
     
-    this.render(true);
+    this.render();
   }
   
   async _onTogglePersistent(event) {
     event.preventDefault();
     
-    const fudgeId = event.currentTarget.dataset.fudgeId;
+    const fudgeId = event.target.closest('[data-fudge-id]').dataset.fudgeId;
     const fudge = this.fudges[fudgeId];
     
     if (fudge) {
@@ -132,14 +145,14 @@ export class FudgeDialog extends Application {
         persistent: !fudge.persistent
       });
       
-      this.render(true);
+      this.render();
     }
   }
   
   async _onToggleActive(event) {
     event.preventDefault();
     
-    const fudgeId = event.currentTarget.dataset.fudgeId;
+    const fudgeId = event.target.closest('[data-fudge-id]').dataset.fudgeId;
     const fudge = this.fudges[fudgeId];
     
     if (fudge) {
@@ -147,7 +160,7 @@ export class FudgeDialog extends Application {
         active: !fudge.active
       });
       
-      this.render(true);
+      this.render();
     }
   }
   
@@ -164,7 +177,7 @@ export class FudgeDialog extends Application {
     if (confirmed) {
       await game.diehard.config.setActiveFudges({});
       ui.notifications.info('All fudges cleared');
-      this.render(true);
+      this.render();
     }
   }
 }
