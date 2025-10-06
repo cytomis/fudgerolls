@@ -5,33 +5,40 @@
 
 import { MODULE_ID, MODULE_TITLE } from './main.js';
 
-export class KarmaDialog extends Application {
+export class KarmaDialog extends foundry.applications.api.ApplicationV2 {
   constructor(options = {}) {
     super(options);
     this.config = game.diehard.config.getKarmaConfig();
   }
   
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id: 'die-hard-karma-dialog',
+  static DEFAULT_OPTIONS = {
+    id: 'die-hard-karma-dialog',
+    tag: 'div',
+    window: {
       title: `${MODULE_TITLE} - Karma Configuration`,
-      template: 'modules/foundry-die-hard/templates/karma-dialog.html',
-      classes: ['die-hard', 'karma-dialog'],
+      resizable: true
+    },
+    classes: ['die-hard', 'karma-dialog'],
+    position: {
       width: 700,
-      height: 700,
-      resizable: true,
-      tabs: [{ navSelector: '.tabs', contentSelector: '.content', initial: 'statistics' }]
-    });
-  }
+      height: 700
+    }
+  };
+
+  static PARTS = {
+    form: {
+      template: 'modules/foundry-die-hard/templates/karma-dialog.html'
+    }
+  };
   
-  getData(options = {}) {
-    const data = super.getData(options);
+  async _prepareContext(options = {}) {
+    const context = await super._prepareContext(options);
     
     // Add karma configuration
-    data.config = this.config;
+    context.config = this.config;
     
     // Get online users with karma enabled status
-    data.users = game.users.map(u => {
+    context.users = game.users.map(u => {
       const enabled = game.diehard.config.isKarmaEnabledForUser(u.id);
       return {
         id: u.id,
@@ -44,7 +51,7 @@ export class KarmaDialog extends Application {
     
     // Get roll history
     const history = game.diehard.config.getRollHistory();
-    data.history = [];
+    context.history = [];
     
     for (const [userId, rolls] of Object.entries(history)) {
       const user = game.users.get(userId);
@@ -55,7 +62,7 @@ export class KarmaDialog extends Application {
         ? rolls.reduce((sum, r) => sum + r.value, 0) / rolls.length 
         : 0;
       
-      data.history.push({
+      context.history.push({
         userId,
         userName: user.name,
         rolls: recentRolls,
@@ -69,7 +76,7 @@ export class KarmaDialog extends Application {
     const averageHistorySize = this.config.average.historySize || 10;
     const maxHistorySize = Math.max(simpleHistorySize, averageHistorySize);
     
-    data.statistics = game.users.map(u => {
+    context.statistics = game.users.map(u => {
       const userRolls = history[u.id] || [];
       const recentRolls = userRolls.slice(-maxHistorySize);
       const simpleRolls = userRolls.slice(-simpleHistorySize);
@@ -127,35 +134,39 @@ export class KarmaDialog extends Application {
       };
     }).filter(s => s.totalRolls > 0); // Only show users with roll history
     
-    return data;
+    return context;
   }
   
-  activateListeners(html) {
-    super.activateListeners(html);
+  _onRender(context, options) {
+    super._onRender(context, options);
     
     // Save configuration
-    html.find('#save-karma-config').click(this._onSaveConfig.bind(this));
+    this.element.querySelector('#save-karma-config')?.addEventListener('click', this._onSaveConfig.bind(this));
     
     // Toggle simple karma
-    html.find('#simple-enabled').change(this._onToggleSimple.bind(this));
+    this.element.querySelector('#simple-enabled')?.addEventListener('change', this._onToggleSimple.bind(this));
     
     // Toggle average karma
-    html.find('#average-enabled').change(this._onToggleAverage.bind(this));
+    this.element.querySelector('#average-enabled')?.addEventListener('change', this._onToggleAverage.bind(this));
     
     // Toggle karma for individual users
-    html.find('.toggle-user-karma').change(this._onToggleUserKarma.bind(this));
+    this.element.querySelectorAll('.toggle-user-karma').forEach(checkbox => {
+      checkbox.addEventListener('change', this._onToggleUserKarma.bind(this));
+    });
     
     // Clear user history
-    html.find('.clear-user-history').click(this._onClearUserHistory.bind(this));
+    this.element.querySelectorAll('.clear-user-history').forEach(btn => {
+      btn.addEventListener('click', this._onClearUserHistory.bind(this));
+    });
     
     // Clear all history
-    html.find('#clear-all-history').click(this._onClearAllHistory.bind(this));
+    this.element.querySelector('#clear-all-history')?.addEventListener('click', this._onClearAllHistory.bind(this));
   }
   
   async _onSaveConfig(event) {
     event.preventDefault();
     
-    const form = event.currentTarget.form;
+    const form = this.element.querySelector('#karma-config-form');
     const formData = new FormData(form);
     
     const config = {
@@ -178,12 +189,12 @@ export class KarmaDialog extends Application {
     
     ui.notifications.info('Karma configuration saved');
     
-    this.render(true);
+    this.render();
   }
   
   _onToggleSimple(event) {
-    const enabled = event.currentTarget.checked;
-    const form = event.currentTarget.form;
+    const enabled = event.target.checked;
+    const form = this.element.querySelector('#karma-config-form');
     
     // Enable/disable related fields
     form.querySelectorAll('.simple-field').forEach(field => {
@@ -192,8 +203,8 @@ export class KarmaDialog extends Application {
   }
   
   _onToggleAverage(event) {
-    const enabled = event.currentTarget.checked;
-    const form = event.currentTarget.form;
+    const enabled = event.target.checked;
+    const form = this.element.querySelector('#karma-config-form');
     
     // Enable/disable related fields
     form.querySelectorAll('.average-field').forEach(field => {
@@ -202,8 +213,8 @@ export class KarmaDialog extends Application {
   }
   
   async _onToggleUserKarma(event) {
-    const userId = event.currentTarget.dataset.userId;
-    const enabled = event.currentTarget.checked;
+    const userId = event.target.dataset.userId;
+    const enabled = event.target.checked;
     
     await game.diehard.config.toggleKarmaForUser(userId, enabled);
     
@@ -214,7 +225,7 @@ export class KarmaDialog extends Application {
   async _onClearUserHistory(event) {
     event.preventDefault();
     
-    const userId = event.currentTarget.dataset.userId;
+    const userId = event.target.dataset.userId;
     const user = game.users.get(userId);
     
     const confirmed = await Dialog.confirm({
@@ -227,7 +238,7 @@ export class KarmaDialog extends Application {
     if (confirmed) {
       await game.diehard.config.clearUserHistory(userId);
       ui.notifications.info(`History cleared for ${user.name}`);
-      this.render(true);
+      this.render();
     }
   }
   
@@ -244,7 +255,7 @@ export class KarmaDialog extends Application {
     if (confirmed) {
       await game.diehard.config.setRollHistory({});
       ui.notifications.info('All roll history cleared');
-      this.render(true);
+      this.render();
     }
   }
   
