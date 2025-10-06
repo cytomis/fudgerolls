@@ -291,21 +291,28 @@ export class DiceManipulator {
       log(`Average Karma: Not enough history (${history.length}/${config.historySize})`);
       return;
     }
-    
+
     const recentRolls = history.slice(-config.historySize);
     const average = recentRolls.reduce((sum, r) => sum + r.value, 0) / recentRolls.length;
-    
+
     log(`Average Karma check: Average of ${recentRolls.length} rolls = ${average.toFixed(2)}, Threshold: ${config.threshold}`);
-    
+
     if (average < config.threshold) {
+      const rawTotal = this.getRawDiceTotal(roll);
       const originalTotal = roll.total;
-      const adjustment = config.cumulative 
-        ? config.adjustment * (history.length - config.historySize + 1)
-        : config.adjustment;
-      
-      log(`Average Karma triggered! Adjustment: ${adjustment} (cumulative: ${config.cumulative})`);
-      this.adjustRollByAmount(roll, adjustment);
-      this.sendKarmaWhisper('Average Karma', originalTotal, roll.total, config);
+
+      // Only apply karma if the current roll is below the threshold
+      if (rawTotal < config.threshold) {
+        const adjustment = config.cumulative
+          ? config.adjustment * (history.length - config.historySize + 1)
+          : config.adjustment;
+
+        log(`Average Karma triggered! Current roll: ${rawTotal}, Adjustment: ${adjustment} (cumulative: ${config.cumulative})`);
+        this.adjustRollByAmount(roll, adjustment);
+        this.sendKarmaWhisper('Average Karma', originalTotal, roll.total, config);
+      } else {
+        log(`Average Karma: Current roll ${rawTotal} is not below threshold ${config.threshold}, no adjustment`);
+      }
     }
   }
   
@@ -329,52 +336,81 @@ export class DiceManipulator {
   }
   
   /**
-   * Adjust roll to minimum value
+   * Adjust roll to minimum value by modifying the die result directly
    */
   adjustRollToMinimum(roll, minimum) {
     const currentRaw = this.getRawDiceTotal(roll);
-    if (currentRaw < minimum) {
-      const difference = minimum - currentRaw;
-      
-      log(`Adjusting roll from ${currentRaw} to ${minimum} (difference: ${difference})`);
-      
-      // Add a modifier term to the roll to reach the minimum
-      const modifier = new foundry.dice.terms.NumericTerm({ number: difference });
-      roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator: '+' }));
-      roll.terms.push(modifier);
-      
-      // Update the formula string to reflect the new terms
-      roll._formula = Roll.getFormula(roll.terms);
-      
-      // Recalculate the total
-      roll._total = roll._evaluateTotal();
-      
-      log(`Roll adjusted. New formula: ${roll._formula}, New total: ${roll._total}`);
+    if (currentRaw >= minimum) {
+      log(`Roll ${currentRaw} already meets minimum ${minimum}, no adjustment needed`);
+      return;
     }
+
+    log(`Adjusting roll from ${currentRaw} to ${minimum}`);
+
+    // Find the d20 die term in the roll
+    let d20Term = null;
+    for (const term of roll.terms) {
+      if (term instanceof foundry.dice.terms.DiceTerm && term.faces === 20) {
+        d20Term = term;
+        break;
+      }
+    }
+
+    if (!d20Term || !d20Term.results || d20Term.results.length === 0) {
+      log('No d20 found in roll, cannot adjust');
+      return;
+    }
+
+    // Calculate the new die value (capped at die maximum)
+    const originalDieValue = d20Term.results[0].result;
+    const difference = minimum - currentRaw;
+    const newDieValue = Math.min(originalDieValue + difference, d20Term.faces);
+
+    log(`Modifying d20 result: ${originalDieValue} -> ${newDieValue} (capped at ${d20Term.faces})`);
+
+    // Modify the die result directly
+    d20Term.results[0].result = newDieValue;
+
+    // Recalculate the total
+    roll._total = roll._evaluateTotal();
+
+    log(`Roll adjusted. New total: ${roll._total}`);
   }
   
   /**
-   * Adjust roll by specific amount
+   * Adjust roll by specific amount by modifying the die result directly
    */
   adjustRollByAmount(roll, amount) {
     if (amount === 0) return;
-    
+
     log(`Adjusting roll by ${amount}`);
-    
-    // Add a modifier term to the roll
-    const modifier = new foundry.dice.terms.NumericTerm({ number: Math.abs(amount) });
-    const operator = amount > 0 ? '+' : '-';
-    
-    roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator }));
-    roll.terms.push(modifier);
-    
-    // Update the formula string to reflect the new terms
-    roll._formula = Roll.getFormula(roll.terms);
-    
+
+    // Find the d20 die term in the roll
+    let d20Term = null;
+    for (const term of roll.terms) {
+      if (term instanceof foundry.dice.terms.DiceTerm && term.faces === 20) {
+        d20Term = term;
+        break;
+      }
+    }
+
+    if (!d20Term || !d20Term.results || d20Term.results.length === 0) {
+      log('No d20 found in roll, cannot adjust');
+      return;
+    }
+
+    const originalDieValue = d20Term.results[0].result;
+    const newDieValue = Math.max(1, Math.min(originalDieValue + amount, d20Term.faces));
+
+    log(`Modifying d20 result: ${originalDieValue} -> ${newDieValue} (capped between 1 and ${d20Term.faces})`);
+
+    // Modify the die result directly
+    d20Term.results[0].result = newDieValue;
+
     // Recalculate the total
     roll._total = roll._evaluateTotal();
-    
-    log(`Roll adjusted. New formula: ${roll._formula}, New total: ${roll._total}`);
+
+    log(`Roll adjusted. New total: ${roll._total}`);
   }
   
   /**
