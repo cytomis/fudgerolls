@@ -2,6 +2,22 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.8] - 2025-10-06
+
+### Fixed
+- **Dependent Rolls Now Update with Karma** - When a base d20 roll is modified by karma, all dependent calculations (like skill checks displayed in a grid) now update correctly
+- Added logic to track and update dependent roll values in chat messages
+- Delta calculation applies karma modifications to all rolls based on the original value
+- Visual styling (blue, bold) applied to modified dependent values
+- Tooltips show original values for transparency
+
+### Technical
+- Enhanced `createChatMessage` hook to find and update dependent roll calculations
+- Searches for all occurrences of original roll value within chat message HTML
+- Updates dependent calculations (e.g., skill checks = base roll + modifier) by applying the same delta
+- Tracks modified elements to avoid duplicate updates
+- Searches for values within ±20 of original roll to catch skill checks with modifiers
+
 ## [2.3.7] - 2025-10-06
 
 ### Fixed
