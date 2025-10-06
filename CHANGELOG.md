@@ -2,6 +2,19 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.15] - 2025-10-06
+
+### Fixed
+- **CRITICAL: Roll adjustments not applied to chat cards** - Fixed issue where roll modifications were not being displayed in chat
+- Roll objects were being modified in memory but not properly serialized for Foundry v13
+- Now properly converts rolls to JSON before updating message source data
+- Fixes issue introduced in 2.3.14 where chat cards displayed but rolls weren't adjusted
+
+### Technical
+- Updated `preCreateChatMessage` hook to serialize modified rolls using `toJSON()` before updating message source
+- Ensures modified roll data is properly persisted in Foundry v13's data structure
+- Added logging of serialized roll totals for debugging
+
 ## [2.3.14] - 2025-10-06
 
 ### Fixed
