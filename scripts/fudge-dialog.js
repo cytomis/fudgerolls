@@ -3,7 +3,7 @@
  * Application for configuring fudge rules
  */
 
-import { MODULE_ID, MODULE_TITLE } from './main.js';
+import { MODULE_ID } from './main.js';
 
 export class FudgeDialog extends foundry.applications.api.ApplicationV2 {
   constructor(options = {}) {
@@ -15,7 +15,7 @@ export class FudgeDialog extends foundry.applications.api.ApplicationV2 {
     id: 'die-hard-fudge-dialog',
     tag: 'div',
     window: {
-      title: `${MODULE_TITLE} - Fudge Configuration`,
+      title: 'Die Hard - Fudge Configuration',
       resizable: true
     },
     classes: ['die-hard', 'fudge-dialog'],
