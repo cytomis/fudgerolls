@@ -304,18 +304,24 @@ function setupDiceRollHooks() {
       }
     }
 
-    // If rolls were modified, update the message with modified rolls
-    // In Foundry v13, we need to convert rolls to JSON for proper serialization
+    // If rolls were modified, we need to update the message to reflect the changes
     if (modified) {
-      // Convert rolls to JSON to ensure they're properly serialized
-      const serializedRolls = message.rolls.map(r => r.toJSON());
+      // Reconstruct Roll objects from the modified rolls to ensure they're properly serialized
+      const reconstructedRolls = message.rolls.map(r => {
+        // Create a new Roll object from the modified data
+        const newRoll = Roll.fromData(r.toJSON());
+        return newRoll;
+      });
 
+      // We need to regenerate the content HTML with the new roll values
+      // Clear the content so Foundry will regenerate it with the new roll data
       message.updateSource({
-        rolls: serializedRolls
+        rolls: reconstructedRolls,
+        content: ''  // Clear content to force regeneration with new roll values
       });
 
       log('Rolls modified and applied to message');
-      log('Serialized rolls:', serializedRolls.map(r => r._total));
+      log('Modified totals:', reconstructedRolls.map(r => r.total));
     }
 
     log('=== End Processing ===');
@@ -334,10 +340,8 @@ function setupDiceRollHooks() {
       manipulator.updateRollHistory(message.rolls, userId);
     }
 
-    // Note: We do NOT modify the displayed chat card
-    // The roll modification happens at the Roll object level,
-    // so the displayed result will automatically show the modified value
-    // without any manual DOM manipulation
+    // Roll history is updated after the message is created
+    // The roll modifications and content regeneration happen in preCreateChatMessage
   });
 }
 

@@ -2,6 +2,20 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.16] - 2025-10-06
+
+### Fixed
+- **CRITICAL: Karma adjustments not displaying in chat** - Fixed issue where karma modifications were applied but not visible in chat messages
+- Roll objects were being modified correctly but the chat message content was not being regenerated
+- Now properly clears message content to force Foundry to regenerate HTML with modified roll values
+- Fixes issue #20 where GM whispers showed adjustments but chat cards displayed original values
+
+### Technical
+- Updated `preCreateChatMessage` hook to clear content when rolls are modified
+- Added `content: ''` to `updateSource()` call to force Foundry v13 to regenerate chat HTML
+- Properly reconstructs Roll objects from modified data using `Roll.fromData()`
+- Updated misleading comment in `createChatMessage` hook
+
 ## [2.3.15] - 2025-10-06
 
 ### Fixed
