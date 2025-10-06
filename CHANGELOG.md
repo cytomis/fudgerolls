@@ -2,6 +2,19 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.2] - 2025-10-05
+
+### Fixed
+- **CRITICAL: Dialog Rendering Fixed** - Added HandlebarsApplicationMixin to both dialog classes
+- Dialogs now properly render and open without errors
+- Fixed "Application class is not renderable" error
+- Both Fudge and Karma dialogs now implement required rendering methods via mixin
+
+### Technical
+- Changed class extension from `ApplicationV2` to `HandlebarsApplicationMixin(ApplicationV2)`
+- HandlebarsApplicationMixin provides `_renderHTML` and `_replaceHTML` implementations
+- This is the correct pattern for ApplicationV2 classes that use Handlebars templates
+
 ## [2.3.1] - 2025-10-05
 
 ### Fixed
