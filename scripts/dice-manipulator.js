@@ -149,20 +149,29 @@ export class DiceManipulator {
    * Re-roll dice
    */
   rerollDice(roll) {
-    const newRoll = roll.clone();
-    newRoll.resetFormula();
+    // Create a new roll with the same formula
+    const newRoll = new Roll(roll.formula);
     newRoll.evaluate({ async: false });
     return newRoll;
   }
   
   /**
-   * Apply roll result
+   * Apply roll result by modifying the roll in place
    */
   applyRollResult(targetRoll, sourceRoll) {
-    // Copy the results from sourceRoll to targetRoll
-    targetRoll.terms = sourceRoll.terms;
+    // Copy all the important properties from sourceRoll to targetRoll
+    targetRoll.terms = foundry.utils.duplicate(sourceRoll.terms);
     targetRoll._total = sourceRoll._total;
     targetRoll._evaluated = sourceRoll._evaluated;
+    targetRoll._dice = sourceRoll._dice;
+    
+    // Force recalculation of the total
+    targetRoll._total = targetRoll._evaluateTotal();
+    
+    log('Applied roll result:', {
+      original: sourceRoll._total,
+      modified: targetRoll._total
+    });
   }
   
   /**
@@ -251,17 +260,25 @@ export class DiceManipulator {
    * Process simple karma
    */
   processSimpleKarma(roll, history, config) {
-    if (history.length < config.historySize) return;
+    if (history.length < config.historySize) {
+      log(`Simple Karma: Not enough history (${history.length}/${config.historySize})`);
+      return;
+    }
     
     const recentRolls = history.slice(-config.historySize);
     const allBelowThreshold = recentRolls.every(r => r.value < config.threshold);
     
+    log(`Simple Karma check: ${recentRolls.length} rolls, all below ${config.threshold}? ${allBelowThreshold}`);
+    
     if (allBelowThreshold) {
       const rawTotal = this.getRawDiceTotal(roll);
       
+      log(`Simple Karma triggered! Raw total: ${rawTotal}, Minimum: ${config.minValue}`);
+      
       if (rawTotal < config.minValue) {
-        log('Simple Karma triggered, adjusting roll');
+        log(`Simple Karma: Adjusting roll to minimum ${config.minValue}`);
         this.adjustRollToMinimum(roll, config.minValue);
+        this.sendKarmaWhisper('Simple Karma', rawTotal, roll.total, config);
       }
     }
   }
@@ -270,19 +287,45 @@ export class DiceManipulator {
    * Process average karma
    */
   processAverageKarma(roll, history, config) {
-    if (history.length < config.historySize) return;
+    if (history.length < config.historySize) {
+      log(`Average Karma: Not enough history (${history.length}/${config.historySize})`);
+      return;
+    }
     
     const recentRolls = history.slice(-config.historySize);
     const average = recentRolls.reduce((sum, r) => sum + r.value, 0) / recentRolls.length;
     
+    log(`Average Karma check: Average of ${recentRolls.length} rolls = ${average.toFixed(2)}, Threshold: ${config.threshold}`);
+    
     if (average < config.threshold) {
+      const originalTotal = roll.total;
       const adjustment = config.cumulative 
-        ? config.adjustment * (config.historySize - history.length + 1)
+        ? config.adjustment * (history.length - config.historySize + 1)
         : config.adjustment;
       
-      log(`Average Karma triggered, adjusting roll by ${adjustment}`);
+      log(`Average Karma triggered! Adjustment: ${adjustment} (cumulative: ${config.cumulative})`);
       this.adjustRollByAmount(roll, adjustment);
+      this.sendKarmaWhisper('Average Karma', originalTotal, roll.total, config);
     }
+  }
+  
+  /**
+   * Send whisper about karma adjustment
+   */
+  async sendKarmaWhisper(type, originalValue, finalValue, config) {
+    const content = `<div class="die-hard-whisper karma-whisper">
+      <h3>${type} Applied</h3>
+      <p><strong>Original Total:</strong> ${originalValue}</p>
+      <p><strong>Adjusted Total:</strong> ${finalValue}</p>
+      <p><strong>Adjustment:</strong> +${finalValue - originalValue}</p>
+      <p class="karma-config"><em>Threshold: ${config.threshold}</em></p>
+    </div>`;
+    
+    await ChatMessage.create({
+      content,
+      whisper: [game.user.id],
+      speaker: { alias: `${MODULE_TITLE} - Karma` }
+    });
   }
   
   /**
@@ -292,7 +335,18 @@ export class DiceManipulator {
     const currentRaw = this.getRawDiceTotal(roll);
     if (currentRaw < minimum) {
       const difference = minimum - currentRaw;
-      roll._total += difference;
+      
+      log(`Adjusting roll from ${currentRaw} to ${minimum} (difference: ${difference})`);
+      
+      // Add a modifier term to the roll to reach the minimum
+      const modifier = new foundry.dice.terms.NumericTerm({ number: difference });
+      roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator: '+' }));
+      roll.terms.push(modifier);
+      
+      // Recalculate the total
+      roll._total = roll._evaluateTotal();
+      
+      log(`Roll adjusted. New total: ${roll._total}`);
     }
   }
   
@@ -300,7 +354,21 @@ export class DiceManipulator {
    * Adjust roll by specific amount
    */
   adjustRollByAmount(roll, amount) {
-    roll._total += amount;
+    if (amount === 0) return;
+    
+    log(`Adjusting roll by ${amount}`);
+    
+    // Add a modifier term to the roll
+    const modifier = new foundry.dice.terms.NumericTerm({ number: Math.abs(amount) });
+    const operator = amount > 0 ? '+' : '-';
+    
+    roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator }));
+    roll.terms.push(modifier);
+    
+    // Recalculate the total
+    roll._total = roll._evaluateTotal();
+    
+    log(`Roll adjusted. New total: ${roll._total}`);
   }
   
   /**
