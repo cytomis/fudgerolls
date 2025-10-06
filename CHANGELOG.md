@@ -2,6 +2,22 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.7] - 2025-10-06
+
+### Fixed
+- **Karma No Longer Applies to Damage Rolls** - Karma bonuses now correctly excluded from damage rolls
+- Added `isDamageRoll()` helper function to detect damage rolls by:
+  - Roll constructor name (`DamageRoll`)
+  - Message flavor containing "damage"
+  - Roll options type or flavor containing "damage"
+- Modified karma processing to skip damage rolls
+- Updated roll history tracking to exclude damage rolls
+
+### Technical
+- Karma now only applies to d20-based rolls (ability checks, attack rolls, saving throws)
+- Roll history for karma calculations excludes damage rolls
+- Enhanced roll type detection for proper karma application
+
 ## [2.3.6] - 2025-10-05
 
 ### Fixed
