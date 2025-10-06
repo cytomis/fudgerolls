@@ -244,7 +244,7 @@ function toggleFudgePause() {
  * Setup hooks for intercepting dice rolls
  */
 function setupDiceRollHooks() {
-  // Hook into dice rolls before they're evaluated
+  // Hook into dice rolls before they're evaluated - this is where we modify them
   Hooks.on('preCreateChatMessage', (message, data, options, userId) => {
     if (!game.user.isGM) return true;
     
@@ -256,12 +256,15 @@ function setupDiceRollHooks() {
     // Check if this is a roll message
     if (!message.rolls || message.rolls.length === 0) return true;
     
-    log('Processing roll from user:', userId, 'Message:', message);
+    log('Processing roll from user:', userId, 'Rolls:', message.rolls.length);
     
     const manipulator = game.diehard.manipulator;
+    let modified = false;
     
     // Process each roll
     for (let roll of message.rolls) {
+      const originalTotal = roll.total;
+      
       if (fudgeEnabled) {
         manipulator.processFudge(roll, userId);
       }
@@ -269,6 +272,18 @@ function setupDiceRollHooks() {
       if (karmaEnabled) {
         manipulator.processKarma(roll, userId);
       }
+      
+      // Check if the roll was modified
+      if (roll.total !== originalTotal) {
+        modified = true;
+        log(`Roll modified: ${originalTotal} -> ${roll.total}`);
+      }
+    }
+    
+    // If rolls were modified, we need to update the message data
+    if (modified) {
+      // Update the content to reflect the new rolls
+      message.updateSource({ rolls: message.rolls });
     }
     
     return true;
