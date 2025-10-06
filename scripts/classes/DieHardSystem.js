@@ -317,10 +317,18 @@ export default class DieHardSystem {
             }
             dieHardLog(false, functionLogName + ' - Avg Karma adjustment - new result', roll.result);
 
-            avgKarmaData.history.push(roll.result)
-            while (avgKarmaData.history.length > avgKarmaData.history.history) {
-              avgKarmaData.history.shift()
+            // Check if the new average (after adjustment) reaches the threshold
+            // Create a copy of history with the adjusted roll to check new average
+            const historyWithAdjusted = [...avgKarmaData.history.slice(1), roll.result];
+            const newAverage = historyWithAdjusted.reduce((a, b) => a + b, 0) / historyWithAdjusted.length;
+
+            dieHardLog(false, functionLogName + ' - Avg Karma new average after adjustment', newAverage);
+
+            if (newAverage >= avgKarmaSettings.threshold) {
+              dieHardLog(false, functionLogName + ' - Avg Karma threshold reached, resetting cumulative');
+              avgKarmaData.cumulative = 0;
             }
+
             DieHard.dmToGm('DieHard-Karma: Avg Karma for ' + game.users.current.name + ' adjusted a roll of ' + originalResult + ' to a ' + roll.result);
           } else {
             dieHardLog(false, functionLogName + ' - Avg Karma adjustment not needed', avgKarmaData.history.length, avgKarmaSettings.history, avgKarmaSettings.threshold);

@@ -193,7 +193,45 @@ export class DieHardConfig {
     delete history[userId];
     await this.setRollHistory(history);
   }
-  
+
+  /**
+   * Get karma cumulative state
+   */
+  getKarmaCumulativeState() {
+    return game.settings.get(MODULE_ID, 'karmaCumulativeState') || {};
+  }
+
+  /**
+   * Set karma cumulative state
+   */
+  async setKarmaCumulativeState(state) {
+    return await game.settings.set(MODULE_ID, 'karmaCumulativeState', state);
+  }
+
+  /**
+   * Get cumulative adjustment count for a user
+   */
+  getCumulativeCount(userId) {
+    const state = this.getKarmaCumulativeState();
+    return state[userId] || 0;
+  }
+
+  /**
+   * Set cumulative adjustment count for a user
+   */
+  async setCumulativeCount(userId, count) {
+    const state = this.getKarmaCumulativeState();
+    state[userId] = count;
+    await this.setKarmaCumulativeState(state);
+  }
+
+  /**
+   * Reset cumulative adjustment count for a user
+   */
+  async resetCumulativeCount(userId) {
+    await this.setCumulativeCount(userId, 0);
+  }
+
   /**
    * Parse fudge formula
    */

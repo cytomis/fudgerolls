@@ -2,6 +2,32 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.14] - 2025-10-06
+
+### Fixed
+- **CRITICAL: Cumulative Karma Adjustment Reset** - Fixed cumulative adjustment counter not being reset when average reaches threshold
+- Previously, cumulative adjustments would continue to escalate even after the average was corrected
+- Now properly resets cumulative counter when the new average (after adjustment) meets or exceeds the threshold
+- Also resets when average is already at or above threshold before applying any adjustment
+- Fixed in both v13 implementation (dice-manipulator.js) and legacy v10 code (DieHardSystem.js)
+
+### Added
+- **Cumulative State Management** - Added proper tracking of cumulative adjustment counts per user
+- New setting `karmaCumulativeState` stores cumulative counts globally
+- Added methods in config.js: `getCumulativeCount()`, `setCumulativeCount()`, `resetCumulativeCount()`
+- Cumulative state now persists across sessions and is properly managed
+
+### Technical
+- Updated `processAverageKarma()` in dice-manipulator.js to be async and track cumulative state
+- Added logic to calculate new average after adjustment and reset counter when threshold is reached
+- Updated `processKarma()` to be async and await the average karma processing
+- Updated preCreateChatMessage hook to await karma processing
+- Fixed DieHardSystem.js roll evaluation to check if adjusted average reaches threshold
+- Cumulative counter now properly resets in three scenarios:
+  1. When average is already >= threshold (no adjustment needed)
+  2. When adjusted roll brings average >= threshold (adjustment worked)
+  3. When cumulative mode is disabled (always resets to 1)
+
 ## [2.3.13] - 2025-10-06
 
 ### Fixed
