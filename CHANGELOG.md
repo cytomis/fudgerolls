@@ -2,6 +2,26 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.4] - 2025-10-05
+
+### Fixed
+- **Scrollbar Added to Karma Configuration** - Tab content now scrolls properly to show all options including Average Karma
+- **Improved Roll Modification Display** - Roll formula is now properly updated when modified
+- Enhanced roll modification to update both total and formula string
+- Better tracking of roll changes for debugging
+
+### Changed
+- Tab content now has max-height with overflow scroll
+- Roll modifications create new rolls array for proper reactivity
+- Formula is regenerated using `Roll.getFormula()` after adding modifier terms
+- Enhanced logging shows both formula and total changes
+
+### Technical
+- Added `max-height: 500px` and `overflow-y: auto` to tab content
+- Roll formula updated via `roll._formula = Roll.getFormula(roll.terms)`
+- Message receives new rolls array reference for proper change detection
+- Content update forced to trigger message re-render
+
 ## [2.3.3] - 2025-10-05
 
 ### Fixed
