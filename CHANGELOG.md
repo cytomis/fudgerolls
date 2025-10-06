@@ -2,6 +2,21 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.10] - 2025-10-06
+
+### Fixed
+- **Karma Now Modifies Raw d20 Roll Value** - Karma adjustments now directly modify the d20 die result instead of adding modifier terms
+- Previously karma was incorrectly adding a modifier term (showing as "+X" in the roll formula)
+- Now karma directly changes the actual rolled d20 value itself, clamped between 1-20
+- The displayed d20 result reflects the karma-adjusted value, not the original roll plus a modifier
+
+### Technical
+- Modified `adjustRollToMinimum()` in dice-manipulator.js to directly mutate the d20 DiceTerm's result value
+- Modified `adjustRollByAmount()` in dice-manipulator.js to directly mutate the d20 DiceTerm's result value
+- Both functions now locate the d20 die in the roll terms and modify its `results[0].result` property
+- Roll values are clamped to valid d20 range (1-20) after adjustment
+- No modifier terms are added - the base die value itself is changed
+
 ## [2.3.9] - 2025-10-06
 
 ### Fixed
