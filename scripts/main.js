@@ -241,46 +241,86 @@ function toggleFudgePause() {
 }
 
 /**
+ * Check if a roll is a damage roll
+ */
+function isDamageRoll(roll, message) {
+  // Check if roll is an instance of DamageRoll (dnd5e and other systems)
+  if (roll.constructor.name === 'DamageRoll') {
+    return true;
+  }
+
+  // Check message flavor for damage indicators
+  if (message.flavor) {
+    const flavor = message.flavor.toLowerCase();
+    if (flavor.includes('damage')) {
+      return true;
+    }
+  }
+
+  // Check roll options for damage type
+  if (roll.options) {
+    if (roll.options.type === 'damage' || roll.options.rollType === 'damage') {
+      return true;
+    }
+
+    // Check flavor in roll options
+    if (roll.options.flavor) {
+      const flavor = roll.options.flavor.toLowerCase();
+      if (flavor.includes('damage')) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
  * Setup hooks for intercepting dice rolls
  */
 function setupDiceRollHooks() {
   // Store modifications temporarily
   const modifiedMessages = new Map();
-  
+
   // Hook into dice rolls before they're created
   Hooks.on('preCreateChatMessage', async (message, data, options, userId) => {
     if (!game.user.isGM) return true;
-    
+
     const fudgeEnabled = game.settings.get(MODULE_ID, 'enableFudge');
     const karmaEnabled = game.settings.get(MODULE_ID, 'enableKarma');
-    
+
     if (!fudgeEnabled && !karmaEnabled) return true;
-    
+
     // Check if this is a roll message
     if (!message.rolls || message.rolls.length === 0) return true;
-    
+
     log('Processing roll from user:', userId, 'Rolls:', message.rolls.length);
-    
+
     const manipulator = game.diehard.manipulator;
     let modified = false;
     const originalValues = [];
-    
+
     // Process each roll
     for (let i = 0; i < message.rolls.length; i++) {
       let roll = message.rolls[i];
       const originalTotal = roll.total;
       const originalFormula = roll.formula;
-      
+      const isDamage = isDamageRoll(roll, message);
+
       originalValues.push({ total: originalTotal, formula: originalFormula });
-      
+
       if (fudgeEnabled) {
         manipulator.processFudge(roll, userId);
       }
-      
-      if (karmaEnabled) {
+
+      // Only apply karma to non-damage rolls
+      if (karmaEnabled && !isDamage) {
         manipulator.processKarma(roll, userId);
+        log(`Karma processed for roll: ${roll.formula}`);
+      } else if (karmaEnabled && isDamage) {
+        log(`Skipping karma for damage roll: ${roll.formula}`);
       }
-      
+
       // Check if the roll was modified
       if (roll.total !== originalTotal || roll.formula !== originalFormula) {
         modified = true;
@@ -318,12 +358,17 @@ function setupDiceRollHooks() {
   // Hook after message is created to fix the display
   Hooks.on('createChatMessage', async (message, options, userId) => {
     if (!game.user.isGM) return;
-    
-    // Update roll history
+
+    // Update roll history (only for non-damage rolls)
     const karmaEnabled = game.settings.get(MODULE_ID, 'enableKarma');
     if (karmaEnabled && message.rolls && message.rolls.length > 0) {
       const manipulator = game.diehard.manipulator;
-      manipulator.updateRollHistory(message.rolls, userId);
+      // Filter out damage rolls before updating history
+      const nonDamageRolls = message.rolls.filter(roll => !isDamageRoll(roll, message));
+      if (nonDamageRolls.length > 0) {
+        manipulator.updateRollHistory(nonDamageRolls, userId);
+        log(`Updated roll history with ${nonDamageRolls.length} non-damage rolls`);
+      }
     }
     
     // Check if this message was modified
