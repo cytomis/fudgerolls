@@ -37,6 +37,7 @@ export class KarmaDialog extends foundry.applications.api.HandlebarsApplicationM
     const context = await super._prepareContext(options);
     
     // Add karma configuration
+    this.config = game.diehard.config.getKarmaConfig();
     context.config = this.config;
     
     // Get online users with karma enabled status
@@ -136,11 +137,16 @@ export class KarmaDialog extends foundry.applications.api.HandlebarsApplicationM
       };
     }).filter(s => s.totalRolls > 0); // Only show users with roll history
     
+    console.log('Karma Dialog Context:', context);
+    
     return context;
   }
   
   _onRender(context, options) {
     super._onRender(context, options);
+    
+    // Setup tabs
+    this._setupTabs();
     
     // Save configuration
     this.element.querySelector('#save-karma-config')?.addEventListener('click', this._onSaveConfig.bind(this));
@@ -163,6 +169,32 @@ export class KarmaDialog extends foundry.applications.api.HandlebarsApplicationM
     
     // Clear all history
     this.element.querySelector('#clear-all-history')?.addEventListener('click', this._onClearAllHistory.bind(this));
+  }
+  
+  _setupTabs() {
+    const tabButtons = this.element.querySelectorAll('.tabs .item');
+    const tabContents = this.element.querySelectorAll('.tab');
+    
+    // Set initial tab (statistics)
+    if (tabButtons.length > 0) {
+      tabButtons[0].classList.add('active');
+      tabContents[0]?.classList.add('active');
+    }
+    
+    tabButtons.forEach(button => {
+      button.addEventListener('click', (event) => {
+        const targetTab = event.currentTarget.dataset.tab;
+        
+        // Remove active from all tabs
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+        
+        // Add active to clicked tab
+        event.currentTarget.classList.add('active');
+        const targetContent = this.element.querySelector(`.tab[data-tab="${targetTab}"]`);
+        targetContent?.classList.add('active');
+      });
+    });
   }
   
   async _onSaveConfig(event) {
