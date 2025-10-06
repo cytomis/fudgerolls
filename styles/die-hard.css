@@ -37,18 +37,17 @@
 }
 
 /* Dialog Styling */
-.die-hard {
-  font-family: "Signika", sans-serif;
-}
-
 .die-hard .window-content {
-  background: url("../ui/parchment.jpg") repeat;
+  background: linear-gradient(to bottom, #f5f5dc, #e8e8d0);
   padding: 10px;
+  color: #2c2c2c;
 }
 
 .die-hard .tabs {
   border-bottom: 2px solid #782e22;
   margin-bottom: 10px;
+  display: flex;
+  gap: 5px;
 }
 
 .die-hard .tabs .item {
@@ -59,6 +58,7 @@
   color: #4b4a44;
   font-weight: bold;
   transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
 }
 
 .die-hard .tabs .item:hover {
@@ -68,7 +68,20 @@
 
 .die-hard .tabs .item.active {
   color: #782e22;
-  border-bottom: 2px solid #782e22;
+  border-bottom-color: #782e22;
+}
+
+/* Tab Content */
+.die-hard .tab {
+  display: none;
+}
+
+.die-hard .tab.active {
+  display: block;
+}
+
+.die-hard .content {
+  padding: 10px 0;
 }
 
 /* Form Styling */
