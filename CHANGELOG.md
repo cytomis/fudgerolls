@@ -2,6 +2,20 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.9] - 2025-10-06
+
+### Fixed
+- **Karma Modifier Application Order** - Karma adjustments now apply to the raw d20 roll before any other modifiers
+- Previously karma was added as a modifier term at the end of the roll formula (after ability scores, proficiency, etc.)
+- Now karma directly modifies the d20 dice result value itself, ensuring proper application order
+- This ensures karma affects the base roll value before ability modifiers, proficiency bonuses, and other adjustments are calculated
+
+### Technical
+- Updated `adjustRollToMinimum()` to modify the d20 DiceTerm result directly instead of adding modifier terms
+- Updated `adjustRollByAmount()` to modify the d20 DiceTerm result directly instead of adding modifier terms
+- Both functions now find the d20 DiceTerm in the roll and modify its `result` property
+- Ensures karma adjustments happen to the raw dice value before any other modifiers are applied
+
 ## [2.3.8] - 2025-10-06
 
 ### Fixed
