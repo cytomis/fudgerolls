@@ -250,44 +250,52 @@ function setupDiceRollHooks() {
   // Hook into dice rolls before they're created
   Hooks.on('preCreateChatMessage', async (message, data, options, userId) => {
     if (!game.user.isGM) return true;
-    
+
     const fudgeEnabled = game.settings.get(MODULE_ID, 'enableFudge');
     const karmaEnabled = game.settings.get(MODULE_ID, 'enableKarma');
-    
+
     if (!fudgeEnabled && !karmaEnabled) return true;
-    
+
     // Check if this is a roll message
     if (!message.rolls || message.rolls.length === 0) return true;
-    
-    log('Processing roll from user:', userId, 'Rolls:', message.rolls.length);
-    
+
+    log('=== Processing Chat Message ===');
+    log('User:', userId, 'Rolls:', message.rolls.length);
+    log('Message flavor:', message.flavor);
+    log('Message flags:', message.flags);
+
     const manipulator = game.diehard.manipulator;
     let modified = false;
     const originalValues = [];
-    
+
     // Process each roll
     for (let i = 0; i < message.rolls.length; i++) {
       let roll = message.rolls[i];
       const originalTotal = roll.total;
       const originalFormula = roll.formula;
-      
+
+      log(`Roll ${i+1}:`, roll.constructor.name, `Formula: ${originalFormula}`, `Total: ${originalTotal}`);
+      log(`Roll terms:`, roll.terms.map(t => `${t.constructor.name}(${t.faces || 'N/A'})`).join(', '));
+
       originalValues.push({ total: originalTotal, formula: originalFormula });
-      
+
       if (fudgeEnabled) {
         manipulator.processFudge(roll, userId);
       }
-      
+
       if (karmaEnabled) {
         manipulator.processKarma(roll, userId);
       }
-      
+
       // Check if the roll was modified
       if (roll.total !== originalTotal || roll.formula !== originalFormula) {
         modified = true;
         log(`Roll modified: ${originalFormula} = ${originalTotal} -> ${roll.formula} = ${roll.total}`);
+      } else {
+        log(`Roll not modified`);
       }
     }
-    
+
     // If rolls were modified, update the message with modified rolls
     if (modified) {
       message.updateSource({
@@ -296,7 +304,9 @@ function setupDiceRollHooks() {
 
       log('Rolls modified and applied to message');
     }
-    
+
+    log('=== End Processing ===');
+
     return true;
   });
   

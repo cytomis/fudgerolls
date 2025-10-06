@@ -2,7 +2,7 @@
   "id": "foundry-die-hard",
   "title": "Die Hard",
   "description": "A module to influence and manipulate die rolls in Foundry VTT. Allows GMs to fudge rolls and implement karma systems with per-user controls.",
-  "version": "2.3.12",
+  "version": "2.3.13",
   "compatibility": {
     "minimum": "13",
     "verified": "13"

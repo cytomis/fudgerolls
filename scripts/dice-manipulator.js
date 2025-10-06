@@ -364,18 +364,49 @@ export class DiceManipulator {
     }
 
     log(`Adjusting roll from ${currentRaw} to ${minimum}`);
+    log(`Roll structure:`, roll.constructor.name, `Formula:`, roll.formula);
+    log(`Roll terms:`, roll.terms.map(t => `${t.constructor.name}(${t.faces || 'N/A'})`).join(', '));
 
-    // Find the d20 die term in the roll
+    // Find the d20 die term in the roll - try multiple approaches
     let d20Term = null;
+
+    // Approach 1: Look for d20 in direct terms
     for (const term of roll.terms) {
       if (term instanceof foundry.dice.terms.DiceTerm && term.faces === 20) {
         d20Term = term;
+        log(`Found d20 in direct terms`);
         break;
       }
     }
 
+    // Approach 2: If not found, look in nested dice array
+    if (!d20Term && roll.dice && Array.isArray(roll.dice)) {
+      for (const die of roll.dice) {
+        if (die.faces === 20) {
+          d20Term = die;
+          log(`Found d20 in dice array`);
+          break;
+        }
+      }
+    }
+
+    // Approach 3: Look for any DiceTerm (for non-d20 systems or special rolls)
+    if (!d20Term) {
+      for (const term of roll.terms) {
+        if (term instanceof foundry.dice.terms.DiceTerm && term.results && term.results.length > 0) {
+          d20Term = term;
+          log(`Found generic DiceTerm with ${term.faces} faces as fallback`);
+          break;
+        }
+      }
+    }
+
     if (!d20Term || !d20Term.results || d20Term.results.length === 0) {
-      log('No d20 found in roll, cannot adjust');
+      log('ERROR: No d20 found in roll, cannot adjust. Roll structure:', JSON.stringify({
+        formula: roll.formula,
+        terms: roll.terms.map(t => t.constructor.name),
+        dice: roll.dice?.map(d => `${d.constructor.name}(${d.faces})`)
+      }));
       return;
     }
 
@@ -384,7 +415,7 @@ export class DiceManipulator {
     const difference = minimum - currentRaw;
     const newDieValue = Math.min(originalDieValue + difference, d20Term.faces);
 
-    log(`Modifying d20 result: ${originalDieValue} -> ${newDieValue} (capped at ${d20Term.faces})`);
+    log(`Modifying d${d20Term.faces} result: ${originalDieValue} -> ${newDieValue} (capped at ${d20Term.faces})`);
 
     // Modify the die result directly
     d20Term.results[0].result = newDieValue;
@@ -402,25 +433,56 @@ export class DiceManipulator {
     if (amount === 0) return;
 
     log(`Adjusting roll by ${amount}`);
+    log(`Roll structure:`, roll.constructor.name, `Formula:`, roll.formula);
+    log(`Roll terms:`, roll.terms.map(t => `${t.constructor.name}(${t.faces || 'N/A'})`).join(', '));
 
-    // Find the d20 die term in the roll
+    // Find the d20 die term in the roll - try multiple approaches
     let d20Term = null;
+
+    // Approach 1: Look for d20 in direct terms
     for (const term of roll.terms) {
       if (term instanceof foundry.dice.terms.DiceTerm && term.faces === 20) {
         d20Term = term;
+        log(`Found d20 in direct terms`);
         break;
       }
     }
 
+    // Approach 2: If not found, look in nested dice array
+    if (!d20Term && roll.dice && Array.isArray(roll.dice)) {
+      for (const die of roll.dice) {
+        if (die.faces === 20) {
+          d20Term = die;
+          log(`Found d20 in dice array`);
+          break;
+        }
+      }
+    }
+
+    // Approach 3: Look for any DiceTerm (for non-d20 systems or special rolls)
+    if (!d20Term) {
+      for (const term of roll.terms) {
+        if (term instanceof foundry.dice.terms.DiceTerm && term.results && term.results.length > 0) {
+          d20Term = term;
+          log(`Found generic DiceTerm with ${term.faces} faces as fallback`);
+          break;
+        }
+      }
+    }
+
     if (!d20Term || !d20Term.results || d20Term.results.length === 0) {
-      log('No d20 found in roll, cannot adjust');
+      log('ERROR: No d20 found in roll, cannot adjust. Roll structure:', JSON.stringify({
+        formula: roll.formula,
+        terms: roll.terms.map(t => t.constructor.name),
+        dice: roll.dice?.map(d => `${d.constructor.name}(${d.faces})`)
+      }));
       return;
     }
 
     const originalDieValue = d20Term.results[0].result;
     const newDieValue = Math.max(1, Math.min(originalDieValue + amount, d20Term.faces));
 
-    log(`Modifying d20 result: ${originalDieValue} -> ${newDieValue} (capped between 1 and ${d20Term.faces})`);
+    log(`Modifying d${d20Term.faces} result: ${originalDieValue} -> ${newDieValue} (capped between 1 and ${d20Term.faces})`);
 
     // Modify the die result directly
     d20Term.results[0].result = newDieValue;
