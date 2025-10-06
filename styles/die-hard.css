@@ -403,6 +403,21 @@
   font-style: italic;
 }
 
+.die-hard-whisper.karma-whisper {
+  border-left-color: #2196f3;
+}
+
+.die-hard-whisper.karma-whisper h3 {
+  color: #2196f3;
+}
+
+.die-hard-whisper .karma-config {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+}
+
 /* Scrollbar Styling */
 .die-hard ::-webkit-scrollbar {
   width: 8px;
