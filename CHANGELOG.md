@@ -2,6 +2,27 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.3] - 2025-10-05
+
+### Fixed
+- **Dialog Content Now Displays** - Fixed empty dialog windows
+- Removed broken parchment.jpg background image reference
+- Added manual tab switching functionality (ApplicationV2 doesn't have built-in tabs)
+- Added CSS to properly show/hide tab content
+- Dialogs now display all content correctly
+
+### Added
+- Manual tab navigation for both Fudge and Karma dialogs
+- Console logging for dialog context (helps debugging)
+- Gradient background instead of missing image
+- Tab active/inactive CSS styling
+
+### Technical
+- Implemented `_setupTabs()` method in both dialog classes
+- Added `.tab { display: none }` and `.tab.active { display: block }` CSS
+- Replaced `url("../ui/parchment.jpg")` with CSS gradient
+- ApplicationV2 requires manual tab handling unlike v1's automatic tab support
+
 ## [2.3.2] - 2025-10-05
 
 ### Fixed
