@@ -330,51 +330,68 @@ export class DiceManipulator {
   
   /**
    * Adjust roll to minimum value
+   * Modifies the raw d20 dice result directly, before any modifiers are applied
    */
   adjustRollToMinimum(roll, minimum) {
     const currentRaw = this.getRawDiceTotal(roll);
     if (currentRaw < minimum) {
       const difference = minimum - currentRaw;
-      
-      log(`Adjusting roll from ${currentRaw} to ${minimum} (difference: ${difference})`);
-      
-      // Add a modifier term to the roll to reach the minimum
-      const modifier = new foundry.dice.terms.NumericTerm({ number: difference });
-      roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator: '+' }));
-      roll.terms.push(modifier);
-      
-      // Update the formula string to reflect the new terms
-      roll._formula = Roll.getFormula(roll.terms);
-      
-      // Recalculate the total
+
+      log(`Adjusting raw d20 from ${currentRaw} to ${minimum} (difference: ${difference})`);
+
+      // Find the d20 die term and modify its result directly
+      for (const term of roll.terms) {
+        if (term instanceof foundry.dice.terms.DiceTerm && term.faces === 20) {
+          // Modify the first d20 result we find
+          if (term.results && term.results.length > 0) {
+            const oldResult = term.results[0].result;
+            term.results[0].result = Math.min(minimum, 20); // Cap at 20 for a d20
+            log(`Modified d20 result from ${oldResult} to ${term.results[0].result}`);
+
+            // Recalculate the dice term's total
+            term._evaluateTotal();
+            break;
+          }
+        }
+      }
+
+      // Recalculate the total roll
       roll._total = roll._evaluateTotal();
-      
-      log(`Roll adjusted. New formula: ${roll._formula}, New total: ${roll._total}`);
+
+      log(`Roll adjusted. New total: ${roll._total}`);
     }
   }
   
   /**
    * Adjust roll by specific amount
+   * Modifies the raw d20 dice result directly, before any modifiers are applied
    */
   adjustRollByAmount(roll, amount) {
     if (amount === 0) return;
-    
-    log(`Adjusting roll by ${amount}`);
-    
-    // Add a modifier term to the roll
-    const modifier = new foundry.dice.terms.NumericTerm({ number: Math.abs(amount) });
-    const operator = amount > 0 ? '+' : '-';
-    
-    roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator }));
-    roll.terms.push(modifier);
-    
-    // Update the formula string to reflect the new terms
-    roll._formula = Roll.getFormula(roll.terms);
-    
-    // Recalculate the total
+
+    log(`Adjusting raw d20 by ${amount}`);
+
+    // Find the d20 die term and modify its result directly
+    for (const term of roll.terms) {
+      if (term instanceof foundry.dice.terms.DiceTerm && term.faces === 20) {
+        // Modify the first d20 result we find
+        if (term.results && term.results.length > 0) {
+          const oldResult = term.results[0].result;
+          const newResult = Math.max(1, Math.min(oldResult + amount, 20)); // Keep between 1 and 20
+          term.results[0].result = newResult;
+          log(`Modified d20 result from ${oldResult} to ${newResult} (adjustment: ${amount})`);
+
+          // Recalculate the dice term's total
+          term._evaluateTotal();
+          break;
+        }
+      }
+    }
+
+    // Recalculate the total roll
     roll._total = roll._evaluateTotal();
-    
-    log(`Roll adjusted. New formula: ${roll._formula}, New total: ${roll._total}`);
+
+    log(`Roll adjusted. New total: ${roll._total}`);
   }
   
   /**
