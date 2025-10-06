@@ -3,7 +3,7 @@
  * Application for configuring karma rules
  */
 
-import { MODULE_ID, MODULE_TITLE } from './main.js';
+import { MODULE_ID } from './main.js';
 
 export class KarmaDialog extends foundry.applications.api.ApplicationV2 {
   constructor(options = {}) {
@@ -15,7 +15,7 @@ export class KarmaDialog extends foundry.applications.api.ApplicationV2 {
     id: 'die-hard-karma-dialog',
     tag: 'div',
     window: {
-      title: `${MODULE_TITLE} - Karma Configuration`,
+      title: 'Die Hard - Karma Configuration',
       resizable: true
     },
     classes: ['die-hard', 'karma-dialog'],
@@ -312,7 +312,7 @@ export class KarmaDialog extends foundry.applications.api.ApplicationV2 {
     ChatMessage.create({
       content,
       whisper: [game.user.id],
-      speaker: { alias: MODULE_TITLE }
+      speaker: { alias: 'Die Hard' }
     });
   }
 }
