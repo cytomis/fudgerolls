@@ -82,6 +82,14 @@
 
 .die-hard .content {
   padding: 10px 0;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.die-hard .tab {
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 10px;
 }
 
 /* Form Styling */
