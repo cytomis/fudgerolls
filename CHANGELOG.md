@@ -2,6 +2,29 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.0] - 2025-10-05
+
+### Fixed
+- **CRITICAL: Migrated to ApplicationV2** - Fixed deprecated Application framework warnings
+- **Roll modifications now persist to chat** - Modified rolls now correctly display in chat messages
+- Fudge and Karma dialogs now use Foundry v13's ApplicationV2 framework
+- Removed jQuery dependencies from dialog event handlers
+- Fixed message data updates to ensure roll modifications are saved
+
+### Changed
+- Complete rewrite of dialog classes using ApplicationV2
+- Updated all event handlers to use vanilla JavaScript instead of jQuery  
+- Improved roll modification tracking and logging
+- Enhanced message update logic for roll changes
+
+### Technical
+- Replaced `Application` with `foundry.applications.api.ApplicationV2`
+- Changed `defaultOptions` to `DEFAULT_OPTIONS` static property
+- Replaced `getData()` with `_prepareContext()`
+- Replaced `activateListeners()` with `_onRender()`
+- Removed jQuery selectors (`.find()`, `.click()`) in favor of vanilla JS
+- Added `PARTS` configuration for template rendering
+
 ## [2.2.2] - 2025-10-05
 
 ### Fixed
