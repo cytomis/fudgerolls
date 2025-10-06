@@ -1,76 +1,104 @@
-# Die Hard Changelog
+# Changelog
 
-## v0.0.2-ALPHA.0
-Jun 16, 2022
-* Initial release of Fudge for DND 5e 
+All notable changes to the Die Hard module will be documented in this file.
 
-## v0.0.3-ALPHA.0
-Jun 25, 2022
-* Major refactor of system code to support flexibility
-* Adjust dialog to support new UI/UX
-* TOTALLY BROKEN fudging of rolls
+## [2.2.2] - 2025-10-05
 
-## v0.0.4-ALPHA.0
-Jul 23, 2022
-* Refactor of all
+### Fixed
+- **Roll Modification Now Working** - Karma and Fudge now properly modify dice rolls
+- Fixed roll manipulation to properly update roll terms instead of just totals
+- Karma adjustments now add proper modifier terms to rolls
+- Fudge re-rolls now properly replace dice results
 
+### Added
+- GM whispers when karma adjusts a roll (shows original and adjusted totals)
+- Detailed logging for karma trigger conditions
+- Better debugging output for roll modifications
 
-## v0.0.5-BETA.0
-Jul 30, 2022
-* Initial release supporting PF2e system
-* Right-click of fudge icon to globally pause/disable all fudges
-* Config dialog UI improvements
-* Notification to DMs when new version installed/upgraded
+### Changed
+- Improved roll adjustment logic for v13 compatibility
+- Enhanced karma whisper styling with blue border
+- More verbose logging for easier troubleshooting
 
-## v0.0.6
-Jul 30, 2022
-* Fix attack/strike roll fudges for PF2e
-* Add concept of "Total Roll" (including modifiers) vs "Raw Die Roll" (only the die)
+## [2.2.1] - 2025-10-05
 
-## v0.0.7
-Aug 1, 2022
-* Remove 'Times' functionality from fudge
-* Fix for raw die fudge still happening when global disabled
-* Issue where disabled fudge before enabled would prevent selection of enabled
-* Change fudge icon behavior for global disabled
-* Fudge icon adjustments #14
-* Fudge config adjustments #15
-* Fix fudge whispers going to more than GM #16
+### Fixed
+- **Critical Bug Fix** - Roll detection now works properly with all player rolls
+- Fixed user ID detection to use ChatMessage userId directly instead of parsing from speaker
+- Roll history now properly tracks all dice rolls
+- Statistics tab now correctly displays player data
+- Karma and Fudge systems now properly detect and process rolls
 
-## v0.0.8
-Aug 2, 2022
-* Fix issue with fudges dialog from Times removal
+### Changed
+- Improved logging for debugging roll detection
+- Debug logging now enabled by default for easier troubleshooting
+- Enhanced error handling for roll processing
 
-## v0.0.9
-Aug 7, 2022
-* Lots of refactoring to cleanup code
-* Remove fudges for actors
-* Simple and Avg Karma
+## [2.2.0] - 2025-10-05
 
-## v0.0.10
-Aug 10, 2022
-* Fixes for disabling fudge 
-* Fix for version notification
-* Fix for making DM not visible to users #22
+### Added
+- **Statistics Tab** - New default tab in Karma Configuration showing real-time player statistics
+- **Quick Statistics** - Right-click karma button to instantly view player averages in chat
+- **Visual Karma Triggers** - Cards highlight in orange when karma conditions would be met
+- **Per-User Karma Control** - Enable/disable karma for individual players (e.g., exclude GM)
+- Comprehensive statistics display showing:
+  - Overall average across all rolls
+  - Average for Simple Karma window
+  - Average for Average Karma window
+  - Min/Max values
+  - Recent roll history visualization
+  - Visual indicators when karma would trigger
 
-## v0.0.11
-Aug 17, 2022
-* Fixes for global disables
-* Improvements to VersionNotification
-* Move lots of debug logging to using the debug flag
-* Adjust Simple and Avg Karma default to disabled
-* Adjust Simple and Avg Karma so they can both influence the die roll
-* Improvements to Fudge Icon #27
-* Add "warning" to Karma dialog for conflict issues
-* Add Cumulative option to Karma dialog
-* Add Karma Cumulative logic
-* Add enable/disable coloring of Karma button
-* Add notification when debugDieResult changes die result
+### Changed
+- Statistics tab is now the default tab when opening Karma Configuration
+- Improved karma dialog layout and organization
+- Enhanced CSS styling for better visual hierarchy
 
-## v0.1.0
-Aug 18, 2022
-* Fix: Catch if user (GM or player) doesn't have any fudges yet
-* Fix: Initial fudge definition not rendering in dialog #26
-* Fix: DND5e skill roll mis-categorized
-* Fix: Avg Karma History not showing
-* Improve documentation
+### Fixed
+- Karma now properly respects per-user settings
+- Statistics calculations align with configured history sizes
+
+## [2.1.0] - 2025-10-05
+
+### Added
+- Per-user karma controls in Karma Configuration
+- Ability to enable/disable karma for specific users
+- User status indicators (GM, Offline, Karma Disabled)
+
+### Changed
+- Updated module for Foundry VTT v13 compatibility
+- Migrated to ESM (ECMAScript Modules)
+- Complete rewrite using modern JavaScript patterns
+
+## [2.0.0] - 2025-10-05
+
+### Added
+- Initial v13 compatibility release
+- Complete module rewrite for Foundry VTT v13
+- ESM module system implementation
+- Updated Application framework
+- Modern dice manipulation system
+- Comprehensive documentation
+
+### Changed
+- Migrated from v10 to v13 API
+- Updated all core functionality for v13
+- Improved error handling
+- Enhanced performance
+
+### Breaking Changes
+- Requires Foundry VTT v13 or higher
+- Not compatible with Foundry VTT v12 or earlier
+
+## [1.x.x] - Legacy
+
+Previous versions were compatible with Foundry VTT v10 and earlier.
+
+---
+
+## Version Numbering
+
+This project follows [Semantic Versioning](https://semver.org/):
+- **MAJOR** version for incompatible API changes
+- **MINOR** version for new functionality in a backward compatible manner
+- **PATCH** version for backward compatible bug fixes
