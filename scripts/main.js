@@ -305,12 +305,17 @@ function setupDiceRollHooks() {
     }
 
     // If rolls were modified, update the message with modified rolls
+    // In Foundry v13, we need to convert rolls to JSON for proper serialization
     if (modified) {
+      // Convert rolls to JSON to ensure they're properly serialized
+      const serializedRolls = message.rolls.map(r => r.toJSON());
+
       message.updateSource({
-        rolls: message.rolls
+        rolls: serializedRolls
       });
 
       log('Rolls modified and applied to message');
+      log('Serialized rolls:', serializedRolls.map(r => r._total));
     }
 
     log('=== End Processing ===');
