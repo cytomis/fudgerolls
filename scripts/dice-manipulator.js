@@ -3,7 +3,7 @@
  * Handles the actual manipulation of dice rolls for fudge and karma systems
  */
 
-import { MODULE_ID, MODULE_TITLE, log } from './main.js';
+import { MODULE_ID, log } from './main.js';
 
 export class DiceManipulator {
   constructor() {
@@ -217,7 +217,7 @@ export class DiceManipulator {
     await ChatMessage.create({
       content,
       whisper: [game.user.id],
-      speaker: { alias: MODULE_TITLE }
+      speaker: { alias: 'Die Hard' }
     });
   }
   
@@ -324,7 +324,7 @@ export class DiceManipulator {
     await ChatMessage.create({
       content,
       whisper: [game.user.id],
-      speaker: { alias: `${MODULE_TITLE} - Karma` }
+      speaker: { alias: 'Die Hard - Karma' }
     });
   }
   
