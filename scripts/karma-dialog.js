@@ -5,7 +5,9 @@
 
 import { MODULE_ID } from './main.js';
 
-export class KarmaDialog extends foundry.applications.api.ApplicationV2 {
+export class KarmaDialog extends foundry.applications.api.HandlebarsApplicationMixin(
+  foundry.applications.api.ApplicationV2
+) {
   constructor(options = {}) {
     super(options);
     this.config = game.diehard.config.getKarmaConfig();
