@@ -2,6 +2,24 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.13] - 2025-10-06
+
+### Fixed
+- **Improved d20 Detection for Karma Adjustments** - Enhanced die detection logic to better handle PF2e Recall Knowledge macros and other special rolls
+- Added multiple fallback approaches for finding d20 dice in rolls:
+  - First tries direct roll terms
+  - Falls back to nested dice array
+  - Finally tries any DiceTerm as last resort
+- Enhanced logging to diagnose roll structure issues when karma fails to apply
+- Better error messages showing roll structure when d20 cannot be found
+
+### Technical
+- Updated `adjustRollToMinimum()` with three-tier d20 detection approach
+- Updated `adjustRollByAmount()` with three-tier d20 detection approach
+- Added detailed logging of roll structure (constructor name, formula, terms)
+- Added JSON serialization of roll structure in error cases for debugging
+- Enhanced `preCreateChatMessage` hook with more comprehensive logging
+
 ## [2.3.12] - 2025-10-06
 
 ### Fixed
