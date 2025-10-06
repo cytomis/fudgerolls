@@ -2,6 +2,20 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.11] - 2025-10-06
+
+### Fixed
+- **Karma Now Modifies Die Result, Not Modifier** - Karma adjustments now directly modify the die face value instead of adding a modifier term
+- Die result is now capped at the die's maximum value (e.g., d20 cannot exceed 20)
+- Karma no longer applies to rolls that are already at or above the threshold
+- Average Karma now checks if the current roll is below threshold before applying adjustment
+
+### Technical
+- Modified `adjustRollToMinimum()` to directly change the die's result value, capped at die maximum
+- Modified `adjustRollByAmount()` to directly change the die's result value, capped between 1 and die maximum
+- Added check in `processAverageKarma()` to only apply karma when current roll is below threshold
+- Karma now changes the actual rolled value, not the total with modifiers
+
 ## [2.3.10] - 2025-10-06
 
 ### Fixed
