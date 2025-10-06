@@ -318,23 +318,23 @@ function setupDiceRollHooks() {
   // Hook after message is created to fix the display
   Hooks.on('createChatMessage', async (message, options, userId) => {
     if (!game.user.isGM) return;
-    
+
     // Update roll history
     const karmaEnabled = game.settings.get(MODULE_ID, 'enableKarma');
     if (karmaEnabled && message.rolls && message.rolls.length > 0) {
       const manipulator = game.diehard.manipulator;
       manipulator.updateRollHistory(message.rolls, userId);
     }
-    
+
     // Check if this message was modified
     const wasModified = message.getFlag('foundry-die-hard', 'modified');
     if (!wasModified) return;
-    
+
     log('Message was modified, updating display');
-    
+
     // Wait for the message to render
     await new Promise(resolve => setTimeout(resolve, 50));
-    
+
     // Update the message content to show correct values
     if (message.rolls && message.rolls.length > 0) {
       const messageElement = document.querySelector(`[data-message-id="${message.id}"]`);
@@ -342,9 +342,17 @@ function setupDiceRollHooks() {
         log('Could not find message element');
         return;
       }
-      
+
       log('Found message element, updating displays');
-      
+
+      // Get the original and modified roll values to calculate the delta
+      const roll = message.rolls[0];
+      const originalTotal = parseInt(message.getFlag('foundry-die-hard', 'originalTotal'));
+      const modifiedTotal = roll.total;
+      const delta = modifiedTotal - originalTotal;
+
+      log(`Original: ${originalTotal}, Modified: ${modifiedTotal}, Delta: ${delta}`);
+
       // Find and update all result displays
       // Try multiple selectors to catch different system formats
       const selectors = [
@@ -357,7 +365,7 @@ function setupDiceRollHooks() {
         '.degree-of-success',
         'span[class*="result"]',
         'div[class*="result"]',
-        // DND5e specific  
+        // DND5e specific
         '.roll-total',
         '.dice-formula .total',
         // Generic
@@ -365,66 +373,91 @@ function setupDiceRollHooks() {
         'span.total',
         'div.total'
       ];
-      
+
       let updated = false;
-      
+      const updatedElements = new Set(); // Track updated elements to avoid duplicates
+
       // First, try our known selectors
       for (const selector of selectors) {
         const elements = messageElement.querySelectorAll(selector);
         elements.forEach((element, index) => {
-          const roll = message.rolls[index] || message.rolls[0];
-          if (!roll) return;
-          
+          if (updatedElements.has(element)) return; // Skip if already updated
+
+          const rollToUse = message.rolls[index] || message.rolls[0];
+          if (!rollToUse) return;
+
           const currentValue = parseInt(element.textContent.trim());
-          if (!isNaN(currentValue) && currentValue !== roll.total) {
-            log(`Updating ${selector} from ${currentValue} to ${roll.total}`);
-            element.textContent = roll.total;
+          if (!isNaN(currentValue) && currentValue !== rollToUse.total) {
+            log(`Updating ${selector} from ${currentValue} to ${rollToUse.total}`);
+            element.textContent = rollToUse.total;
             element.style.color = '#0066cc';
             element.style.fontWeight = 'bold';
-            element.title = `Modified by Die Hard: ${roll.formula}`;
+            element.title = `Modified by Die Hard: ${rollToUse.formula}`;
+            updatedElements.add(element);
             updated = true;
           }
         });
       }
-      
-      // If no updates were made, try brute force: find ANY element with the old total
-      if (!updated && message.rolls.length > 0) {
-        const roll = message.rolls[0];
-        const originalTotal = parseInt(message.getFlag('foundry-die-hard', 'originalTotal')) || (roll.total - 5);
-        
-        log(`Brute force search for value ${originalTotal} to replace with ${roll.total}`);
-        
-        // Get all text nodes
+
+      // Update all dependent rolls: find text nodes with numeric values and update if they match the pattern
+      // This handles cases where the message contains calculated results based on the base roll
+      if (!isNaN(originalTotal) && !isNaN(delta) && delta !== 0) {
+        log(`Searching for dependent rolls that need updating (delta: ${delta})`);
+
+        // Get all text nodes in the message
         const walker = document.createTreeWalker(
           messageElement,
           NodeFilter.SHOW_TEXT,
           null
         );
-        
+
         let node;
+        const nodesToUpdate = [];
         while (node = walker.nextNode()) {
+          // Skip if parent was already updated
+          if (updatedElements.has(node.parentElement)) continue;
+
           const text = node.textContent.trim();
           const value = parseInt(text);
-          
-          // If this text node contains ONLY the old total value
-          if (!isNaN(value) && text === value.toString() && value === originalTotal) {
-            log(`Found matching text node with value ${value}, updating to ${roll.total}`);
-            node.textContent = roll.total;
-            // Style the parent element
-            if (node.parentElement) {
-              node.parentElement.style.color = '#0066cc';
-              node.parentElement.style.fontWeight = 'bold';
+
+          // Check if this is a numeric value that might be a roll result
+          if (!isNaN(value) && text === value.toString()) {
+            // Check if this value is the original base roll
+            if (value === originalTotal) {
+              log(`Found base roll value ${value}, will update to ${modifiedTotal}`);
+              nodesToUpdate.push({ node, oldValue: value, newValue: modifiedTotal });
             }
-            updated = true;
-            break;
+            // Check if this value could be a dependent calculation (original + modifier)
+            // We look for values that could have been calculated from the original roll
+            else if (Math.abs(value - originalTotal) <= 20) {
+              // This could be a dependent roll (base roll + some modifier)
+              // Calculate what the new value should be
+              const possibleModifier = value - originalTotal;
+              const newValue = modifiedTotal + possibleModifier;
+              log(`Found potential dependent value ${value} (base ${originalTotal} + modifier ${possibleModifier}), will update to ${newValue}`);
+              nodesToUpdate.push({ node, oldValue: value, newValue: newValue });
+            }
           }
         }
+
+        // Apply all updates
+        for (const { node, oldValue, newValue } of nodesToUpdate) {
+          log(`Updating dependent roll from ${oldValue} to ${newValue}`);
+          node.textContent = newValue;
+          if (node.parentElement) {
+            node.parentElement.style.color = '#0066cc';
+            node.parentElement.style.fontWeight = 'bold';
+            node.parentElement.title = `Modified by Die Hard (was ${oldValue})`;
+            updatedElements.add(node.parentElement);
+          }
+          updated = true;
+        }
       }
-      
+
       if (!updated) {
         log('Warning: Could not find result element to update.');
         log('Message rolls:', message.rolls.map(r => `${r.formula} = ${r.total}`));
-        log('Available elements:', 
+        log('Available elements:',
           Array.from(messageElement.querySelectorAll('*'))
             .filter(el => {
               const text = el.textContent.trim();
