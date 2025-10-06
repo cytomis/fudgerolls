@@ -156,6 +156,14 @@ function registerSettings() {
     type: Object,
     default: {}
   });
+
+  // Karma cumulative state (tracks cumulative adjustment count per user)
+  game.settings.register(MODULE_ID, 'karmaCumulativeState', {
+    scope: 'world',
+    config: false,
+    type: Object,
+    default: {}
+  });
 }
 
 /**
@@ -284,7 +292,7 @@ function setupDiceRollHooks() {
       }
 
       if (karmaEnabled) {
-        manipulator.processKarma(roll, userId);
+        await manipulator.processKarma(roll, userId);
       }
 
       // Check if the roll was modified

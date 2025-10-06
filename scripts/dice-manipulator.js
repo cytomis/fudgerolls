@@ -240,35 +240,35 @@ export class DiceManipulator {
   /**
    * Process karma for a roll
    */
-  processKarma(roll, userId) {
+  async processKarma(roll, userId) {
     const config = game.diehard.config.getKarmaConfig();
-    
+
     if (!userId) {
       log('No userId provided for karma processing');
       return;
     }
-    
+
     // Check if karma is enabled for this specific user
     if (!game.diehard.config.isKarmaEnabledForUser(userId)) {
       log(`Karma disabled for user ${userId}, skipping`);
       return;
     }
-    
+
     // Check if karma is enabled
     if (!config.simple.enabled && !config.average.enabled) return;
-    
+
     // Get roll history
     const history = game.diehard.config.getRollHistory();
     const userHistory = history[userId] || [];
-    
+
     // Process simple karma
     if (config.simple.enabled) {
       this.processSimpleKarma(roll, userHistory, config.simple);
     }
-    
+
     // Process average karma
     if (config.average.enabled) {
-      this.processAverageKarma(roll, userHistory, config.average);
+      await this.processAverageKarma(roll, userHistory, config.average, userId);
     }
   }
   
@@ -303,7 +303,7 @@ export class DiceManipulator {
   /**
    * Process average karma
    */
-  processAverageKarma(roll, history, config) {
+  async processAverageKarma(roll, history, config, userId) {
     if (history.length < config.historySize) {
       log(`Average Karma: Not enough history (${history.length}/${config.historySize})`);
       return;
@@ -319,17 +319,44 @@ export class DiceManipulator {
 
       // Only apply karma if the current roll is below the threshold
       if (originalRawTotal < config.threshold) {
-        const adjustment = config.cumulative
-          ? config.adjustment * (history.length - config.historySize + 1)
-          : config.adjustment;
+        // Get or initialize cumulative count
+        let cumulativeCount = game.diehard.config.getCumulativeCount(userId);
 
-        log(`Average Karma triggered! Current roll: ${originalRawTotal}, Adjustment: ${adjustment} (cumulative: ${config.cumulative})`);
+        if (config.cumulative) {
+          cumulativeCount += 1;
+        } else {
+          cumulativeCount = 1;
+        }
+
+        const adjustment = cumulativeCount * config.adjustment;
+
+        log(`Average Karma triggered! Current roll: ${originalRawTotal}, Adjustment: ${adjustment} (cumulative: ${config.cumulative}, count: ${cumulativeCount})`);
+
+        // Store the updated cumulative count
+        await game.diehard.config.setCumulativeCount(userId, cumulativeCount);
+
         this.adjustRollByAmount(roll, adjustment);
         const finalRawTotal = this.getRawDiceTotal(roll);
         this.sendKarmaWhisper('Average Karma', originalRawTotal, finalRawTotal, config);
+
+        // Check if the new average (after adjustment) reaches the threshold
+        // If so, reset the cumulative counter
+        const adjustedRolls = [...recentRolls.slice(0, -1), { value: finalRawTotal }];
+        const newAverage = adjustedRolls.reduce((sum, r) => sum + r.value, 0) / adjustedRolls.length;
+
+        log(`Average Karma: New average after adjustment: ${newAverage.toFixed(2)}`);
+
+        if (newAverage >= config.threshold) {
+          log(`Average Karma: Threshold reached! Resetting cumulative counter.`);
+          await game.diehard.config.resetCumulativeCount(userId);
+        }
       } else {
         log(`Average Karma: Current roll ${originalRawTotal} is not below threshold ${config.threshold}, no adjustment`);
       }
+    } else {
+      // Average is at or above threshold, reset cumulative counter
+      log(`Average Karma: Average ${average.toFixed(2)} is at or above threshold ${config.threshold}, resetting cumulative counter`);
+      await game.diehard.config.resetCumulativeCount(userId);
     }
   }
   
