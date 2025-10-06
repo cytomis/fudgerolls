@@ -53,6 +53,7 @@ export class FudgeDialog extends foundry.applications.api.HandlebarsApplicationM
     }
     
     // Get active fudges
+    this.fudges = game.diehard.config.getActiveFudges();
     context.fudges = Object.values(this.fudges).map(f => {
       const user = game.users.get(f.userId);
       return {
@@ -61,11 +62,16 @@ export class FudgeDialog extends foundry.applications.api.HandlebarsApplicationM
       };
     });
     
+    console.log('Fudge Dialog Context:', context);
+    
     return context;
   }
   
   _onRender(context, options) {
     super._onRender(context, options);
+    
+    // Setup tabs
+    this._setupTabs();
     
     // Create fudge button
     this.element.querySelector('#create-fudge')?.addEventListener('click', this._onCreateFudge.bind(this));
@@ -87,6 +93,32 @@ export class FudgeDialog extends foundry.applications.api.HandlebarsApplicationM
     
     // Clear all fudges
     this.element.querySelector('#clear-all-fudges')?.addEventListener('click', this._onClearAll.bind(this));
+  }
+  
+  _setupTabs() {
+    const tabButtons = this.element.querySelectorAll('.tabs .item');
+    const tabContents = this.element.querySelectorAll('.tab');
+    
+    // Set initial tab
+    if (tabButtons.length > 0) {
+      tabButtons[0].classList.add('active');
+      tabContents[0]?.classList.add('active');
+    }
+    
+    tabButtons.forEach(button => {
+      button.addEventListener('click', (event) => {
+        const targetTab = event.currentTarget.dataset.tab;
+        
+        // Remove active from all tabs
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+        
+        // Add active to clicked tab
+        event.currentTarget.classList.add('active');
+        const targetContent = this.element.querySelector(`.tab[data-tab="${targetTab}"]`);
+        targetContent?.classList.add('active');
+      });
+    });
   }
   
   async _onCreateFudge(event) {
