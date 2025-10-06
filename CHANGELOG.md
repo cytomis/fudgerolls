@@ -2,6 +2,20 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.1] - 2025-10-05
+
+### Fixed
+- **CRITICAL HOTFIX: Module Loading Error** - Fixed ReferenceError where MODULE_TITLE couldn't be accessed before initialization
+- Removed MODULE_TITLE from static class properties in dialog files
+- Replaced dynamic string interpolation with string literals in DEFAULT_OPTIONS
+- Fixed ES6 module initialization order issues
+
+### Technical
+- Changed `title: ${MODULE_TITLE} - ...` to `title: 'Die Hard - ...'` in static properties
+- Removed MODULE_TITLE import from fudge-dialog.js and karma-dialog.js
+- Updated dice-manipulator.js to use string literal instead of MODULE_TITLE constant
+- This prevents initialization errors when static properties are evaluated before imports are resolved
+
 ## [2.3.0] - 2025-10-05
 
 ### Fixed
