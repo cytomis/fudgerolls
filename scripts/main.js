@@ -244,7 +244,10 @@ function toggleFudgePause() {
  * Setup hooks for intercepting dice rolls
  */
 function setupDiceRollHooks() {
-  // Hook into dice rolls before they're evaluated - this is where we modify them
+  // Store modifications temporarily
+  const modifiedMessages = new Map();
+  
+  // Hook into dice rolls before they're created
   Hooks.on('preCreateChatMessage', async (message, data, options, userId) => {
     if (!game.user.isGM) return true;
     
@@ -260,11 +263,15 @@ function setupDiceRollHooks() {
     
     const manipulator = game.diehard.manipulator;
     let modified = false;
+    const originalValues = [];
     
     // Process each roll
-    for (let roll of message.rolls) {
+    for (let i = 0; i < message.rolls.length; i++) {
+      let roll = message.rolls[i];
       const originalTotal = roll.total;
       const originalFormula = roll.formula;
+      
+      originalValues.push({ total: originalTotal, formula: originalFormula });
       
       if (fudgeEnabled) {
         manipulator.processFudge(roll, userId);
@@ -281,66 +288,157 @@ function setupDiceRollHooks() {
       }
     }
     
-    // If rolls were modified, update the message
+    // If rolls were modified, store info for post-processing
     if (modified) {
-      message.updateSource({ rolls: message.rolls });
-      log('Rolls modified and message updated');
+      const messageKey = `${userId}-${Date.now()}`;
+      modifiedMessages.set(messageKey, {
+        rolls: message.rolls,
+        originalValues: originalValues,
+        userId: userId
+      });
+      
+      // Store the key and original values in the message flags so we can find it later
+      message.updateSource({ 
+        rolls: message.rolls,
+        flags: {
+          'foundry-die-hard': {
+            modified: true,
+            messageKey: messageKey,
+            originalTotal: originalValues[0].total // Store first roll's original total for brute force search
+          }
+        }
+      });
+      
+      log('Rolls modified, stored for post-processing');
     }
     
     return true;
   });
   
-  // Hook into message rendering to update the displayed content with modified rolls
-  Hooks.on('renderChatMessage', async (message, html, data) => {
-    // Check if this message has rolls
-    if (!message.rolls || message.rolls.length === 0) return;
-    
-    log('Rendering chat message with rolls:', message.rolls.length);
-    
-    // Find all dice roll elements in the message
-    const rollElements = html[0].querySelectorAll('.dice-roll');
-    
-    rollElements.forEach((element, index) => {
-      const roll = message.rolls[index];
-      if (!roll) return;
-      
-      // Update the displayed total
-      const totalElement = element.querySelector('.dice-total');
-      if (totalElement) {
-        totalElement.textContent = roll.total;
-        log(`Updated displayed total to: ${roll.total}`);
-      }
-      
-      // Update the displayed formula  
-      const formulaElement = element.querySelector('.dice-formula');
-      if (formulaElement) {
-        formulaElement.textContent = roll.formula;
-        log(`Updated displayed formula to: ${roll.formula}`);
-      }
-      
-      // Update the tooltip with the full roll breakdown
-      const tooltip = element.querySelector('.dice-tooltip');
-      if (tooltip && roll.render) {
-        roll.render().then(renderedContent => {
-          tooltip.innerHTML = renderedContent;
-        });
-      }
-    });
-  });
-  
-  // Update roll history after roll is created
-  Hooks.on('createChatMessage', (message, options, userId) => {
+  // Hook after message is created to fix the display
+  Hooks.on('createChatMessage', async (message, options, userId) => {
     if (!game.user.isGM) return;
     
+    // Update roll history
     const karmaEnabled = game.settings.get(MODULE_ID, 'enableKarma');
-    if (!karmaEnabled) return;
+    if (karmaEnabled && message.rolls && message.rolls.length > 0) {
+      const manipulator = game.diehard.manipulator;
+      manipulator.updateRollHistory(message.rolls, userId);
+    }
     
-    if (!message.rolls || message.rolls.length === 0) return;
+    // Check if this message was modified
+    const wasModified = message.getFlag('foundry-die-hard', 'modified');
+    if (!wasModified) return;
     
-    log('Updating roll history for user:', userId);
+    log('Message was modified, updating display');
     
-    const manipulator = game.diehard.manipulator;
-    manipulator.updateRollHistory(message.rolls, userId);
+    // Wait for the message to render
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Update the message content to show correct values
+    if (message.rolls && message.rolls.length > 0) {
+      const messageElement = document.querySelector(`[data-message-id="${message.id}"]`);
+      if (!messageElement) {
+        log('Could not find message element');
+        return;
+      }
+      
+      log('Found message element, updating displays');
+      
+      // Find and update all result displays
+      // Try multiple selectors to catch different system formats
+      const selectors = [
+        // Standard Foundry
+        '.dice-total',
+        '.dice-result',
+        // PF2e specific
+        '.result-total',
+        'h4.result',
+        '.degree-of-success',
+        'span[class*="result"]',
+        'div[class*="result"]',
+        // DND5e specific  
+        '.roll-total',
+        '.dice-formula .total',
+        // Generic
+        '[data-tooltip] .total',
+        'span.total',
+        'div.total'
+      ];
+      
+      let updated = false;
+      
+      // First, try our known selectors
+      for (const selector of selectors) {
+        const elements = messageElement.querySelectorAll(selector);
+        elements.forEach((element, index) => {
+          const roll = message.rolls[index] || message.rolls[0];
+          if (!roll) return;
+          
+          const currentValue = parseInt(element.textContent.trim());
+          if (!isNaN(currentValue) && currentValue !== roll.total) {
+            log(`Updating ${selector} from ${currentValue} to ${roll.total}`);
+            element.textContent = roll.total;
+            element.style.color = '#0066cc';
+            element.style.fontWeight = 'bold';
+            element.title = `Modified by Die Hard: ${roll.formula}`;
+            updated = true;
+          }
+        });
+      }
+      
+      // If no updates were made, try brute force: find ANY element with the old total
+      if (!updated && message.rolls.length > 0) {
+        const roll = message.rolls[0];
+        const originalTotal = parseInt(message.getFlag('foundry-die-hard', 'originalTotal')) || (roll.total - 5);
+        
+        log(`Brute force search for value ${originalTotal} to replace with ${roll.total}`);
+        
+        // Get all text nodes
+        const walker = document.createTreeWalker(
+          messageElement,
+          NodeFilter.SHOW_TEXT,
+          null
+        );
+        
+        let node;
+        while (node = walker.nextNode()) {
+          const text = node.textContent.trim();
+          const value = parseInt(text);
+          
+          // If this text node contains ONLY the old total value
+          if (!isNaN(value) && text === value.toString() && value === originalTotal) {
+            log(`Found matching text node with value ${value}, updating to ${roll.total}`);
+            node.textContent = roll.total;
+            // Style the parent element
+            if (node.parentElement) {
+              node.parentElement.style.color = '#0066cc';
+              node.parentElement.style.fontWeight = 'bold';
+            }
+            updated = true;
+            break;
+          }
+        }
+      }
+      
+      if (!updated) {
+        log('Warning: Could not find result element to update.');
+        log('Message rolls:', message.rolls.map(r => `${r.formula} = ${r.total}`));
+        log('Available elements:', 
+          Array.from(messageElement.querySelectorAll('*'))
+            .filter(el => {
+              const text = el.textContent.trim();
+              const num = parseInt(text);
+              return !isNaN(num) && text.length < 4;
+            })
+            .map(el => ({
+              tag: el.tagName,
+              class: el.className,
+              text: el.textContent.trim()
+            }))
+        );
+      }
+    }
   });
 }
 
