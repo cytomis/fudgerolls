@@ -1,5 +1,5 @@
-# Die Hard - Foundry VTT Module
 # Note this code is updated and maintained using Claude AI, there is no reference to Uranus as this is just a copied branch of the original as it is no longer maintained.
+# Die Hard - Foundry VTT Module
 
 A comprehensive dice manipulation module for Foundry Virtual Tabletop v13, allowing GMs to influence rolls and implement karma systems for better game balance.
 
