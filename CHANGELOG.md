@@ -2,6 +2,25 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.5] - 2025-10-05
+
+### Fixed
+- **CRITICAL: Roll Display Now Updates** - Original roll message now shows modified values
+- Added `renderChatMessage` hook to update displayed roll totals and formulas
+- Modified rolls now visible to ALL users (not just GM)
+- Roll tooltip updated with complete breakdown including modifiers
+
+### Changed
+- Display updates happen when message renders, ensuring all users see modifications
+- Removed GM-only restriction from display updates
+- Formula and total in chat now reflect modifications
+- Tooltip shows detailed roll breakdown with modifiers
+
+### Technical
+- `renderChatMessage` hook updates `.dice-total` and `.dice-formula` elements
+- Tooltip regenerated using `roll.render()` for accurate display
+- All users see the modified roll, maintaining transparency
+
 ## [2.3.4] - 2025-10-05
 
 ### Fixed
