@@ -2,6 +2,27 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [2.3.6] - 2025-10-05
+
+### Fixed
+- **Enhanced Roll Display Update** - Added comprehensive selectors for different game systems
+- Better debugging to identify roll display elements
+- Added PF2e-specific selectors for roll results
+- Stores modification info in message flags
+- Comprehensive logging shows available elements when update fails
+
+### Changed
+- Multiple selector attempts to find result displays across different systems
+- Waits 50ms for message to render before attempting update
+- Logs all available element classes when no match found (for debugging)
+- Added bold blue styling to modified results for visibility
+
+### Technical
+- Added message flags to track modifications
+- Tries 12+ different selectors to find result elements
+- Falls back to logging available classes if no match found
+- Uses `data-message-id` to locate specific messages
+
 ## [2.3.5] - 2025-10-05
 
 ### Fixed
