@@ -343,10 +343,13 @@ export class DiceManipulator {
       roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator: '+' }));
       roll.terms.push(modifier);
       
+      // Update the formula string to reflect the new terms
+      roll._formula = Roll.getFormula(roll.terms);
+      
       // Recalculate the total
       roll._total = roll._evaluateTotal();
       
-      log(`Roll adjusted. New total: ${roll._total}`);
+      log(`Roll adjusted. New formula: ${roll._formula}, New total: ${roll._total}`);
     }
   }
   
@@ -365,10 +368,13 @@ export class DiceManipulator {
     roll.terms.push(new foundry.dice.terms.OperatorTerm({ operator }));
     roll.terms.push(modifier);
     
+    // Update the formula string to reflect the new terms
+    roll._formula = Roll.getFormula(roll.terms);
+    
     // Recalculate the total
     roll._total = roll._evaluateTotal();
     
-    log(`Roll adjusted. New total: ${roll._total}`);
+    log(`Roll adjusted. New formula: ${roll._formula}, New total: ${roll._total}`);
   }
   
   /**
