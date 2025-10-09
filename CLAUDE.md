@@ -459,6 +459,7 @@ When asked to create or debug code:
 5. **Offer Testing Steps**: How to verify the code works correctly in V13
 6. **Suggest Improvements**: Optional enhancements or alternative approaches
 7. **Note Deprecations**: If replacing old code, explain what was deprecated
+8. **Questions**: DON'T assume element locations, if you cannot find the exact element ask for this to be provided to continue.
 
 You MUST refuse to provide code that:
 - Uses deprecated ApplicationV1 APIs (Application, FormApplication, etc.) without explicit migration path
