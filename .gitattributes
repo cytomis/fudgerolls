@@ -1,0 +1,2 @@
+# Exclude CLAUDE.md from release archives
+CLAUDE.md export-ignore
