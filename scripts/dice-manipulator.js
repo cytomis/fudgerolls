@@ -1,244 +1,164 @@
 /**
- * Dice Manipulator
- * Handles the actual manipulation of dice rolls for fudge and karma systems
+ * Dice Manipulator - v0.0.1 Alpha
+ * Simplified system for fudge and karma roll modifications
+ *
+ * FUDGE: Replaces d20 with specific value
+ * KARMA: Modifies d20 by adjustment amount
+ *
+ * All modifications are hidden from players - only GM receives whispers
  */
 
 import { MODULE_ID, log } from './main.js';
 
 export class DiceManipulator {
   constructor() {
-    this.maxAttempts = 150;
+    // No reroll attempts needed - we directly set values
   }
-  
+
   /**
-   * Process fudge for a roll
+   * Process fudge for a roll - REPLACES d20 with set value
    */
   processFudge(roll, userId) {
     const paused = game.settings.get(MODULE_ID, 'fudgesPaused');
     if (paused) return;
-    
+
     const config = game.diehard.config;
     const fudges = config.getActiveFudges();
-    
+
     if (!userId) {
       log('No userId provided for fudge processing');
       return;
     }
-    
+
     // Find applicable fudges for this user
-    const applicableFudges = Object.values(fudges).filter(f => 
+    const applicableFudges = Object.values(fudges).filter(f =>
       f.active && (f.userId === userId || f.userId === 'all')
     );
-    
+
     if (applicableFudges.length === 0) return;
-    
+
     // Process each applicable fudge
     for (const fudge of applicableFudges) {
       const result = this.applyFudge(roll, fudge);
-      
-      if (result.attempted) {
-        // Send whisper to GM
+
+      if (result.modified) {
+        // Send whisper to GM ONLY
         this.sendFudgeWhisper(result, fudge, userId);
-        
+
         // Disable fudge if not persistent
-        if (!fudge.persistent && result.applied) {
+        if (!fudge.persistent) {
           config.disableFudge(fudge.id);
         }
       }
     }
   }
-  
+
   /**
-   * Apply a fudge to a roll
+   * Apply a fudge to a roll - REPLACES d20 with specific value
+   * This is the core fudge logic: we SET the d20 to a specific value
    */
   applyFudge(roll, fudge) {
     const formula = game.diehard.config.parseFudgeFormula(fudge.formula);
     if (!formula) {
-      return { attempted: false, applied: false };
+      return { modified: false };
     }
 
-    const rollType = fudge.rollType || 'total';
-    let targetValue;
+    // Find all d20 dice in this roll
+    const d20Terms = this.findAllD20Terms(roll);
 
-    // Determine what value to check/manipulate
-    switch (rollType) {
-      case 'raw':
-        targetValue = this.getRawDiceTotal(roll);
-        break;
-      case 'total':
-        targetValue = roll.total;
-        break;
-      case 'system':
-        // System-specific handling would go here
-        targetValue = roll.total;
-        break;
-      default:
-        targetValue = roll.total;
+    if (d20Terms.length === 0) {
+      log('No d20 found in roll, cannot fudge');
+      return { modified: false };
     }
 
-    // Get original raw die value for GM message
-    const originalRawDieValue = this.getRawDiceTotal(roll);
+    const modifications = [];
+    let anyModified = false;
 
-    // Check if roll already meets criteria
-    if (formula.test(targetValue, formula.value)) {
-      log(`Roll ${targetValue} already meets formula ${fudge.formula}`);
-      return {
-        attempted: true,
-        applied: false,
-        originalValue: targetValue,
-        finalValue: targetValue,
-        originalRawDieValue: originalRawDieValue,
-        finalRawDieValue: originalRawDieValue,
-        meetsCriteria: true
-      };
+    // Apply fudge to each d20 in the roll
+    for (const d20Info of d20Terms) {
+      const d20Term = d20Info.term;
+      const originalValue = d20Term.results[0].result;
+
+      // Determine target value based on formula
+      let targetValue;
+
+      // Parse the formula to determine what value to set
+      // Formula can be: "=15", ">10", "<5", etc.
+      // For FUDGE, we interpret these as setting to the value if condition not met
+      if (formula.operator === '=' || formula.operator === '==') {
+        // Set to exact value
+        targetValue = formula.value;
+      } else if (formula.operator === '>=' || formula.operator === '>') {
+        // Set to minimum value
+        targetValue = originalValue < formula.value ? formula.value : originalValue;
+      } else if (formula.operator === '<=' || formula.operator === '<') {
+        // Set to maximum value
+        targetValue = originalValue > formula.value ? formula.value : originalValue;
+      } else {
+        targetValue = formula.value;
+      }
+
+      // Clamp to valid d20 range (1-20)
+      targetValue = Math.max(1, Math.min(20, targetValue));
+
+      if (targetValue !== originalValue) {
+        // REPLACE the d20 value
+        d20Term.results[0].result = targetValue;
+        anyModified = true;
+
+        modifications.push({
+          originalValue,
+          newValue: targetValue,
+          adjustment: targetValue - originalValue
+        });
+
+        log(`Fudge: Replaced d20 ${originalValue} with ${targetValue}`);
+      }
     }
 
-    // Attempt to fudge the roll
-    const result = this.attemptFudge(roll, formula, rollType);
-
-    // Get final raw die value after fudge
-    const finalRawDieValue = this.getRawDiceTotal(roll);
+    if (anyModified) {
+      // Recalculate the roll total
+      roll._total = roll._evaluateTotal();
+    }
 
     return {
-      attempted: true,
-      applied: result.success,
-      originalValue: targetValue,
-      finalValue: result.value,
-      originalRawDieValue: originalRawDieValue,
-      finalRawDieValue: finalRawDieValue,
-      attempts: result.attempts,
-      meetsCriteria: result.success
+      modified: anyModified,
+      modifications
     };
   }
-  
+
   /**
-   * Attempt to fudge a roll to meet criteria
+   * Send whisper to GM about fudge result - GM ONLY, hidden from players
    */
-  attemptFudge(roll, formula, rollType) {
-    let bestRoll = foundry.utils.duplicate(roll);
-    let bestValue = rollType === 'raw' ? this.getRawDiceTotal(bestRoll) : bestRoll.total;
-    let bestDistance = Math.abs(bestValue - formula.value);
-    
-    for (let attempt = 0; attempt < this.maxAttempts; attempt++) {
-      // Re-roll the dice
-      const newRoll = this.rerollDice(roll);
-      const newValue = rollType === 'raw' ? this.getRawDiceTotal(newRoll) : newRoll.total;
-      
-      // Check if this roll meets the criteria
-      if (formula.test(newValue, formula.value)) {
-        // Success! Apply this roll
-        this.applyRollResult(roll, newRoll);
-        return {
-          success: true,
-          value: newValue,
-          attempts: attempt + 1
-        };
-      }
-      
-      // Track if this is closer to the target
-      const distance = Math.abs(newValue - formula.value);
-      if (distance < bestDistance) {
-        bestRoll = newRoll;
-        bestValue = newValue;
-        bestDistance = distance;
-      }
-    }
-    
-    // Failed to meet criteria, use the closest result
-    log(`Failed to meet fudge criteria after ${this.maxAttempts} attempts, using closest value`);
-    this.applyRollResult(roll, bestRoll);
-    
-    return {
-      success: false,
-      value: bestValue,
-      attempts: this.maxAttempts
-    };
-  }
-  
-  /**
-   * Re-roll dice
-   */
-  rerollDice(roll) {
-    // Create a new roll with the same formula
-    const newRoll = new Roll(roll.formula);
-    newRoll.evaluate({ async: false });
-    return newRoll;
-  }
-  
-  /**
-   * Apply roll result by modifying the roll in place
-   */
-  applyRollResult(targetRoll, sourceRoll) {
-    // Copy all the important properties from sourceRoll to targetRoll
-    targetRoll.terms = foundry.utils.duplicate(sourceRoll.terms);
-    targetRoll._total = sourceRoll._total;
-    targetRoll._evaluated = sourceRoll._evaluated;
-    targetRoll._dice = sourceRoll._dice;
-    
-    // Force recalculation of the total
-    targetRoll._total = targetRoll._evaluateTotal();
-    
-    log('Applied roll result:', {
-      original: sourceRoll._total,
-      modified: targetRoll._total
-    });
-  }
-  
-  /**
-   * Get raw dice total (sum of all dice, excluding modifiers)
-   */
-  getRawDiceTotal(roll) {
-    let total = 0;
-    
-    for (const term of roll.terms) {
-      if (term instanceof foundry.dice.terms.DiceTerm) {
-        total += term.total;
-      }
-    }
-    
-    return total;
-  }
-  
-  /**
-   * Send whisper to GM about fudge result
-   */
-  async sendFudgeWhisper(result, fudge, userId, roll) {
+  async sendFudgeWhisper(result, fudge, userId) {
     const user = game.users.get(userId);
     const userName = user ? user.name : 'Unknown';
 
-    // Get raw die values for display (not totals with modifiers)
-    const originalRawValue = result.originalRawDieValue || result.originalValue;
-    const finalRawValue = result.finalRawDieValue || result.finalValue;
-
-    let content = `<div class="die-hard-whisper">
-      <h3>Fudge Applied</h3>
-      <p><strong>User:</strong> ${userName}</p>
-      <p><strong>Formula:</strong> ${fudge.formula}</p>
-      <p><strong>Original d20:</strong> ${originalRawValue}</p>`;
-
-    if (result.applied) {
-      content += `<p><strong>Final d20:</strong> ${finalRawValue}</p>
-        <p><strong>Adjustment:</strong> ${finalRawValue > originalRawValue ? '+' : ''}${finalRawValue - originalRawValue}</p>
-        <p><strong>Attempts:</strong> ${result.attempts}</p>`;
-    } else if (result.meetsCriteria) {
-      content += `<p><em>Roll already met criteria</em></p>`;
-    } else {
-      content += `<p><strong>Final d20 (closest):</strong> ${finalRawValue}</p>
-        <p><strong>Adjustment:</strong> ${finalRawValue > originalRawValue ? '+' : ''}${finalRawValue - originalRawValue}</p>
-        <p><em>Could not meet criteria after ${this.maxAttempts} attempts</em></p>`;
+    let modificationsText = '';
+    if (result.modifications && result.modifications.length > 0) {
+      modificationsText = result.modifications.map(m =>
+        `<li>d20: ${m.originalValue} → ${m.newValue} (${m.adjustment > 0 ? '+' : ''}${m.adjustment})</li>`
+      ).join('');
     }
 
-    content += `</div>`;
+    const content = `<div class="die-hard-whisper">
+      <h3>🎲 Fudge Roll Applied</h3>
+      <p><strong>User:</strong> ${userName}</p>
+      <p><strong>Formula:</strong> ${fudge.formula}</p>
+      <p><strong>Changes:</strong></p>
+      <ul>${modificationsText}</ul>
+      <p><em>This modification is hidden from players</em></p>
+    </div>`;
 
     await ChatMessage.create({
       content,
-      whisper: [game.user.id],
-      speaker: { alias: 'Die Hard' }
+      whisper: [game.user.id], // Only to GM
+      speaker: { alias: 'Die Hard - Fudge' }
     });
   }
-  
+
   /**
-   * Process karma for a roll
+   * Process karma for a roll - MODIFIES d20 by adjustment amount
    */
   async processKarma(roll, userId) {
     const config = game.diehard.config.getKarmaConfig();
@@ -263,7 +183,7 @@ export class DiceManipulator {
 
     // Process simple karma
     if (config.simple.enabled) {
-      this.processSimpleKarma(roll, userHistory, config.simple);
+      this.processSimpleKarma(roll, userHistory, config.simple, userId);
     }
 
     // Process average karma
@@ -271,11 +191,11 @@ export class DiceManipulator {
       await this.processAverageKarma(roll, userHistory, config.average, userId);
     }
   }
-  
+
   /**
-   * Process simple karma
+   * Process simple karma - if last N rolls below threshold, set to minimum
    */
-  processSimpleKarma(roll, history, config) {
+  processSimpleKarma(roll, history, config, userId) {
     if (history.length < config.historySize) {
       log(`Simple Karma: Not enough history (${history.length}/${config.historySize})`);
       return;
@@ -287,21 +207,47 @@ export class DiceManipulator {
     log(`Simple Karma check: ${recentRolls.length} rolls, all below ${config.threshold}? ${allBelowThreshold}`);
 
     if (allBelowThreshold) {
-      const originalRawTotal = this.getRawDiceTotal(roll);
+      // Find all d20 dice in this roll
+      const d20Terms = this.findAllD20Terms(roll);
 
-      log(`Simple Karma triggered! Raw total: ${originalRawTotal}, Minimum: ${config.minValue}`);
+      if (d20Terms.length === 0) {
+        log('Simple Karma: No d20 found in roll');
+        return;
+      }
 
-      if (originalRawTotal < config.minValue) {
-        log(`Simple Karma: Adjusting roll to minimum ${config.minValue}`);
-        this.adjustRollToMinimum(roll, config.minValue);
-        const finalRawTotal = this.getRawDiceTotal(roll);
-        this.sendKarmaWhisper('Simple Karma', originalRawTotal, finalRawTotal, config);
+      const modifications = [];
+
+      // Apply karma to each d20
+      for (const d20Info of d20Terms) {
+        const d20Term = d20Info.term;
+        const originalValue = d20Term.results[0].result;
+
+        if (originalValue < config.minValue) {
+          // Set to minimum value
+          d20Term.results[0].result = Math.min(config.minValue, 20);
+          const newValue = d20Term.results[0].result;
+
+          modifications.push({
+            originalValue,
+            newValue,
+            adjustment: newValue - originalValue
+          });
+
+          log(`Simple Karma: d20 ${originalValue} → ${newValue}`);
+        }
+      }
+
+      if (modifications.length > 0) {
+        // Recalculate the roll total
+        roll._total = roll._evaluateTotal();
+
+        this.sendKarmaWhisper('Simple Karma', modifications, config, userId);
       }
     }
   }
-  
+
   /**
-   * Process average karma
+   * Process average karma - if average below threshold, add adjustment
    */
   async processAverageKarma(roll, history, config, userId) {
     if (history.length < config.historySize) {
@@ -315,43 +261,71 @@ export class DiceManipulator {
     log(`Average Karma check: Average of ${recentRolls.length} rolls = ${average.toFixed(2)}, Threshold: ${config.threshold}`);
 
     if (average < config.threshold) {
-      const originalRawTotal = this.getRawDiceTotal(roll);
+      // Find all d20 dice in this roll
+      const d20Terms = this.findAllD20Terms(roll);
 
-      // Only apply karma if the current roll is below the threshold
-      if (originalRawTotal < config.threshold) {
-        // Get or initialize cumulative count
-        let cumulativeCount = game.diehard.config.getCumulativeCount(userId);
+      if (d20Terms.length === 0) {
+        log('Average Karma: No d20 found in roll');
+        return;
+      }
 
-        if (config.cumulative) {
-          cumulativeCount += 1;
-        } else {
-          cumulativeCount = 1;
+      // Get or initialize cumulative count
+      let cumulativeCount = game.diehard.config.getCumulativeCount(userId);
+
+      if (config.cumulative) {
+        cumulativeCount += 1;
+      } else {
+        cumulativeCount = 1;
+      }
+
+      const adjustment = cumulativeCount * config.adjustment;
+
+      log(`Average Karma triggered! Adjustment: ${adjustment} (cumulative: ${config.cumulative}, count: ${cumulativeCount})`);
+
+      // Store the updated cumulative count
+      await game.diehard.config.setCumulativeCount(userId, cumulativeCount);
+
+      const modifications = [];
+
+      // Apply karma to each d20
+      for (const d20Info of d20Terms) {
+        const d20Term = d20Info.term;
+        const originalValue = d20Term.results[0].result;
+
+        // Only apply if current roll is below threshold
+        if (originalValue < config.threshold) {
+          const newValue = Math.max(1, Math.min(originalValue + adjustment, 20));
+          d20Term.results[0].result = newValue;
+
+          modifications.push({
+            originalValue,
+            newValue,
+            adjustment: newValue - originalValue
+          });
+
+          log(`Average Karma: d20 ${originalValue} → ${newValue} (${adjustment > 0 ? '+' : ''}${adjustment})`);
         }
+      }
 
-        const adjustment = cumulativeCount * config.adjustment;
+      if (modifications.length > 0) {
+        // Recalculate the roll total
+        roll._total = roll._evaluateTotal();
 
-        log(`Average Karma triggered! Current roll: ${originalRawTotal}, Adjustment: ${adjustment} (cumulative: ${config.cumulative}, count: ${cumulativeCount})`);
-
-        // Store the updated cumulative count
-        await game.diehard.config.setCumulativeCount(userId, cumulativeCount);
-
-        this.adjustRollByAmount(roll, adjustment);
-        const finalRawTotal = this.getRawDiceTotal(roll);
-        this.sendKarmaWhisper('Average Karma', originalRawTotal, finalRawTotal, config);
+        this.sendKarmaWhisper('Average Karma', modifications, config, userId);
 
         // Check if the new average (after adjustment) reaches the threshold
-        // If so, reset the cumulative counter
-        const adjustedRolls = [...recentRolls.slice(0, -1), { value: finalRawTotal }];
-        const newAverage = adjustedRolls.reduce((sum, r) => sum + r.value, 0) / adjustedRolls.length;
+        // Use the first modified die's new value for average calculation
+        if (modifications.length > 0) {
+          const adjustedRolls = [...recentRolls.slice(0, -1), { value: modifications[0].newValue }];
+          const newAverage = adjustedRolls.reduce((sum, r) => sum + r.value, 0) / adjustedRolls.length;
 
-        log(`Average Karma: New average after adjustment: ${newAverage.toFixed(2)}`);
+          log(`Average Karma: New average after adjustment: ${newAverage.toFixed(2)}`);
 
-        if (newAverage >= config.threshold) {
-          log(`Average Karma: Threshold reached! Resetting cumulative counter.`);
-          await game.diehard.config.resetCumulativeCount(userId);
+          if (newAverage >= config.threshold) {
+            log(`Average Karma: Threshold reached! Resetting cumulative counter.`);
+            await game.diehard.config.resetCumulativeCount(userId);
+          }
         }
-      } else {
-        log(`Average Karma: Current roll ${originalRawTotal} is not below threshold ${config.threshold}, no adjustment`);
       }
     } else {
       // Average is at or above threshold, reset cumulative counter
@@ -359,221 +333,88 @@ export class DiceManipulator {
       await game.diehard.config.resetCumulativeCount(userId);
     }
   }
-  
+
   /**
-   * Send whisper about karma adjustment
+   * Send whisper about karma adjustment - GM ONLY, hidden from players
    */
-  async sendKarmaWhisper(type, originalRawValue, finalRawValue, config) {
-    const adjustment = finalRawValue - originalRawValue;
+  async sendKarmaWhisper(type, modifications, config, userId) {
+    const user = game.users.get(userId);
+    const userName = user ? user.name : 'Unknown';
+
+    let modificationsText = '';
+    if (modifications && modifications.length > 0) {
+      modificationsText = modifications.map(m =>
+        `<li>d20: ${m.originalValue} → ${m.newValue} (${m.adjustment > 0 ? '+' : ''}${m.adjustment})</li>`
+      ).join('');
+    }
+
     const content = `<div class="die-hard-whisper karma-whisper">
-      <h3>${type} Applied</h3>
-      <p><strong>Original d20:</strong> ${originalRawValue}</p>
-      <p><strong>Adjusted d20:</strong> ${finalRawValue}</p>
-      <p><strong>Adjustment:</strong> ${adjustment > 0 ? '+' : ''}${adjustment}</p>
-      <p class="karma-config"><em>Threshold: ${config.threshold}</em></p>
+      <h3>✨ ${type} Applied</h3>
+      <p><strong>User:</strong> ${userName}</p>
+      <p><strong>Changes:</strong></p>
+      <ul>${modificationsText}</ul>
+      <p><em>Threshold: ${config.threshold}</em></p>
+      <p><em>This modification is hidden from players</em></p>
     </div>`;
 
     await ChatMessage.create({
       content,
-      whisper: [game.user.id],
+      whisper: [game.user.id], // Only to GM
       speaker: { alias: 'Die Hard - Karma' }
     });
   }
-  
+
   /**
-   * Adjust roll to minimum value by modifying the die result directly
+   * Find all d20 dice terms in a roll
+   * Returns array of {term, index} objects for each d20 found
+   * Handles multiple d20s in a single roll (e.g., PF2e Recall Knowledge with multiple skills)
    */
-  adjustRollToMinimum(roll, minimum) {
-    const currentRaw = this.getRawDiceTotal(roll);
-    if (currentRaw >= minimum) {
-      log(`Roll ${currentRaw} already meets minimum ${minimum}, no adjustment needed`);
-      return;
-    }
-
-    log(`Adjusting roll from ${currentRaw} to ${minimum}`);
-    log(`Roll structure:`, roll.constructor.name, `Formula:`, roll.formula);
-    log(`Roll terms:`, roll.terms.map(t => `${t.constructor.name}(${t.faces || 'N/A'})`).join(', '));
-
-    // Find the d20 die term in the roll - try multiple approaches
-    let d20Term = null;
+  findAllD20Terms(roll) {
+    const d20Terms = [];
 
     // Approach 1: Look for d20 in direct terms
-    for (const term of roll.terms) {
-      if (term instanceof foundry.dice.terms.DiceTerm && term.faces === 20) {
-        d20Term = term;
-        log(`Found d20 in direct terms`);
-        break;
+    for (let i = 0; i < roll.terms.length; i++) {
+      const term = roll.terms[i];
+      if (term instanceof foundry.dice.terms.DiceTerm && term.faces === 20 && term.results && term.results.length > 0) {
+        d20Terms.push({ term, index: i });
+        log(`Found d20 in terms[${i}]`);
       }
     }
 
-    // Approach 2: If not found, look in nested dice array
-    if (!d20Term && roll.dice && Array.isArray(roll.dice)) {
-      for (const die of roll.dice) {
-        if (die.faces === 20) {
-          d20Term = die;
-          log(`Found d20 in dice array`);
-          break;
+    // Approach 2: Look in nested dice array (if no terms found)
+    if (d20Terms.length === 0 && roll.dice && Array.isArray(roll.dice)) {
+      for (let i = 0; i < roll.dice.length; i++) {
+        const die = roll.dice[i];
+        if (die.faces === 20 && die.results && die.results.length > 0) {
+          d20Terms.push({ term: die, index: i });
+          log(`Found d20 in dice[${i}]`);
         }
       }
     }
 
-    // Approach 3: Look for any DiceTerm (for non-d20 systems or special rolls)
-    if (!d20Term) {
-      for (const term of roll.terms) {
-        if (term instanceof foundry.dice.terms.DiceTerm && term.results && term.results.length > 0) {
-          d20Term = term;
-          log(`Found generic DiceTerm with ${term.faces} faces as fallback`);
-          break;
-        }
-      }
-    }
-
-    if (!d20Term || !d20Term.results || d20Term.results.length === 0) {
-      log('ERROR: No d20 found in roll, cannot adjust. Roll structure:', JSON.stringify({
-        formula: roll.formula,
-        terms: roll.terms.map(t => t.constructor.name),
-        dice: roll.dice?.map(d => `${d.constructor.name}(${d.faces})`)
-      }));
-      return;
-    }
-
-    // Calculate the new die value (capped at die maximum)
-    const originalDieValue = d20Term.results[0].result;
-    const difference = minimum - currentRaw;
-    const newDieValue = Math.min(originalDieValue + difference, d20Term.faces);
-
-    log(`Modifying d${d20Term.faces} result: ${originalDieValue} -> ${newDieValue} (capped at ${d20Term.faces})`);
-
-    // Modify the die result directly
-    d20Term.results[0].result = newDieValue;
-
-    // Recalculate the total
-    roll._total = roll._evaluateTotal();
-
-    log(`Roll adjusted. New total: ${roll._total}`);
+    log(`Found ${d20Terms.length} d20 dice in roll`);
+    return d20Terms;
   }
-  
+
   /**
-   * Adjust roll by specific amount by modifying the die result directly
-   */
-  adjustRollByAmount(roll, amount) {
-    if (amount === 0) return;
-
-    log(`Adjusting roll by ${amount}`);
-    log(`Roll structure:`, roll.constructor.name, `Formula:`, roll.formula);
-    log(`Roll terms:`, roll.terms.map(t => `${t.constructor.name}(${t.faces || 'N/A'})`).join(', '));
-
-    // Find the d20 die term in the roll - try multiple approaches
-    let d20Term = null;
-
-    // Approach 1: Look for d20 in direct terms
-    for (const term of roll.terms) {
-      if (term instanceof foundry.dice.terms.DiceTerm && term.faces === 20) {
-        d20Term = term;
-        log(`Found d20 in direct terms`);
-        break;
-      }
-    }
-
-    // Approach 2: If not found, look in nested dice array
-    if (!d20Term && roll.dice && Array.isArray(roll.dice)) {
-      for (const die of roll.dice) {
-        if (die.faces === 20) {
-          d20Term = die;
-          log(`Found d20 in dice array`);
-          break;
-        }
-      }
-    }
-
-    // Approach 3: Look for any DiceTerm (for non-d20 systems or special rolls)
-    if (!d20Term) {
-      for (const term of roll.terms) {
-        if (term instanceof foundry.dice.terms.DiceTerm && term.results && term.results.length > 0) {
-          d20Term = term;
-          log(`Found generic DiceTerm with ${term.faces} faces as fallback`);
-          break;
-        }
-      }
-    }
-
-    if (!d20Term || !d20Term.results || d20Term.results.length === 0) {
-      log('ERROR: No d20 found in roll, cannot adjust. Roll structure:', JSON.stringify({
-        formula: roll.formula,
-        terms: roll.terms.map(t => t.constructor.name),
-        dice: roll.dice?.map(d => `${d.constructor.name}(${d.faces})`)
-      }));
-      return;
-    }
-
-    const originalDieValue = d20Term.results[0].result;
-    const newDieValue = Math.max(1, Math.min(originalDieValue + amount, d20Term.faces));
-
-    log(`Modifying d${d20Term.faces} result: ${originalDieValue} -> ${newDieValue} (capped between 1 and ${d20Term.faces})`);
-
-    // Modify the die result directly
-    d20Term.results[0].result = newDieValue;
-
-    // Recalculate the total
-    roll._total = roll._evaluateTotal();
-
-    log(`Roll adjusted. New total: ${roll._total}`);
-  }
-  
-  /**
-   * Update roll history
+   * Update roll history - tracks raw d20 values for karma calculations
    */
   async updateRollHistory(rolls, userId) {
     if (!userId) {
       log('No userId provided for updating roll history');
       return;
     }
-    
+
     for (const roll of rolls) {
-      const rawTotal = this.getRawDiceTotal(roll);
-      await game.diehard.config.addToRollHistory(userId, { total: rawTotal });
-      log(`Added roll to history for user ${userId}: ${rawTotal}`);
-    }
-  }
-  
-  /**
-   * Get user ID from speaker (kept for backward compatibility, but not used anymore)
-   */
-  getUserIdFromSpeaker(speaker) {
-    if (!speaker) return null;
-    
-    // First, try to get the user from the actor
-    if (speaker.actor) {
-      const actor = game.actors.get(speaker.actor);
-      if (actor) {
-        // Find the user who owns this actor
-        for (const [userId, permission] of Object.entries(actor.ownership)) {
-          if (userId !== 'default' && permission === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
-            return userId;
-          }
-        }
+      // Find d20 values and track them
+      const d20Terms = this.findAllD20Terms(roll);
+
+      if (d20Terms.length > 0) {
+        // Track the first d20 value for karma calculations
+        const d20Value = d20Terms[0].term.results[0].result;
+        await game.diehard.config.addToRollHistory(userId, { total: d20Value });
+        log(`Added d20 roll to history for user ${userId}: ${d20Value}`);
       }
     }
-    
-    // Try to get user from token
-    if (speaker.token) {
-      const token = canvas.tokens?.get(speaker.token);
-      if (token?.actor) {
-        for (const [userId, permission] of Object.entries(token.actor.ownership)) {
-          if (userId !== 'default' && permission === CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
-            return userId;
-          }
-        }
-      }
-    }
-    
-    // Fallback: check if any user has this actor as their character
-    for (const user of game.users) {
-      if (user.character?.id === speaker.actor) {
-        return user.id;
-      }
-    }
-    
-    return null;
   }
 }
