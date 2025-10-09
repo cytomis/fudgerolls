@@ -2,6 +2,74 @@
 
 All notable changes to the Die Hard module will be documented in this file.
 
+## [0.0.1] - 2025-10-09 - ALPHA REWRITE
+
+### ⚠️ BREAKING CHANGES - Complete Module Rewrite
+This is a complete alpha rewrite of the module from v2.3.16. The core functionality has been simplified and clarified.
+
+### Core Philosophy Changes
+- **Fudge Rolls**: Now REPLACES d20 with a specific value (no more rerolling)
+- **Karma Rolls**: MODIFIES d20 by adding/subtracting adjustment amount
+- **GM-Only Visibility**: All modifications are now completely hidden from players - only GM receives whisper notifications
+- **Multiple d20 Support**: Properly handles chat cards with multiple d20 rolls (e.g., PF2e Recall Knowledge macros)
+
+### Changed
+- **Fudge System Simplified**:
+  - Fudge now directly SETS the d20 value instead of rerolling until criteria is met
+  - Formula "=15" sets d20 to 15
+  - Formula ">=10" sets d20 to 10 if below 10
+  - No more 150 reroll attempts - instant and deterministic
+  - Handles multiple d20s in a single chat message
+
+- **Karma System Clarified**:
+  - Karma ADJUSTS the d20 by the specified amount (e.g., +2 turns a 10 into a 12)
+  - Simple Karma: Sets d20 to minimum value if last N rolls below threshold
+  - Average Karma: Adds adjustment amount to d20 if average below threshold
+  - Cumulative mode properly increments and resets when average reaches threshold
+  - Handles multiple d20s in a single chat message
+
+- **GM Whispers Enhanced**:
+  - All modifications now send whispers ONLY to GM
+  - Whispers show original d20 value → new d20 value
+  - Clear indication that modifications are hidden from players
+  - Separate whispers for fudge and karma with distinct styling
+
+- **Multiple d20 Handling**:
+  - New `findAllD20Terms()` method finds all d20 dice in a roll
+  - Each d20 is modified individually
+  - Handles complex rolls like PF2e Recall Knowledge with multiple skill checks
+  - All modifications tracked and reported in whispers
+
+### Technical
+- Completely rewrote `dice-manipulator.js` for clarity and simplicity
+- Removed complex reroll logic from fudge system
+- Enhanced d20 detection with fallback approaches
+- All whispers use `whisper: [game.user.id]` for GM-only visibility
+- Roll history tracks actual d20 values (not totals with modifiers)
+- Karma threshold reset logic preserved and clarified
+
+### Preserved Features
+- All configuration options from v2.3.16 maintained
+- Simple Karma and Average Karma modes
+- Cumulative karma adjustments
+- Per-user karma control
+- History size settings
+- Threshold and adjustment values
+- Roll type selection (raw/total/system)
+- Fudge pause/resume functionality
+- Persistent vs one-time fudges
+- Font Awesome icons (fa-poo for fudge, fa-praying-hands for karma)
+- Dialog templates and UI
+
+### Migration Notes
+This is an alpha rewrite. If you were using v2.3.16:
+- Your configuration settings will be preserved
+- Fudge behavior has changed from "reroll until criteria met" to "set to specific value"
+- All modifications are now hidden from players (GM whispers only)
+- The module is now focused solely on d20 modifications
+
+---
+
 ## [2.3.16] - 2025-10-06
 
 ### Fixed
